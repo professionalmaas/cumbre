@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ML = ROOT / "ml" / "fameblind"
+ML = ROOT / "ml"
 
 
 def main() -> int:
@@ -19,22 +19,25 @@ def main() -> int:
     enrich.add_argument("features_csv", type=Path)
     enrich.add_argument("labeled_csv", type=Path)
     enrich.add_argument("-o", "--output", type=Path, default=None)
+    enrich.add_argument("--model", choices=["hgb", "rf"], default="hgb")
 
-    train = sub.add_parser("train", help="Train fame-blind popularity model")
-    train.add_argument("features_csv", type=Path)
-    train.add_argument("labeled_csv", type=Path)
-    train.add_argument("--model", default="rf")
-    train.add_argument("--sample", type=int, default=None)
+    train = sub.add_parser("train", help="Train fame-blind hit classifier (full Cumbre pipeline)")
+    train.add_argument("csvs", nargs="*", type=Path)
+    train.add_argument("--hf", default=None)
+    train.add_argument("--model", default="rf", choices=["rf", "knn", "logreg"])
+    train.add_argument("--out", default="CUMBRE_fameblind_model.pkl")
 
     args = parser.parse_args()
-    script = "enrich_popularity.py" if args.cmd == "enrich" else "train_fameblind.py"
-    cmd = [sys.executable, str(ML / script), str(args.features_csv), str(args.labeled_csv)]
-    if args.cmd == "enrich" and args.output:
-        cmd.extend(["-o", str(args.output)])
-    if args.cmd == "train":
+    if args.cmd == "enrich":
+        cmd = [sys.executable, str(ML / "enrich_popularity.py"), str(args.features_csv), str(args.labeled_csv)]
+        if args.output:
+            cmd.extend(["-o", str(args.output)])
         cmd.extend(["--model", args.model])
-        if args.sample:
-            cmd.extend(["--sample", str(args.sample)])
+    else:
+        cmd = [sys.executable, str(ML / "train_fameblind.py"), *[str(p) for p in args.csvs]]
+        if args.hf:
+            cmd.extend(["--hf", args.hf])
+        cmd.extend(["--model", args.model, "--out", args.out])
 
     return subprocess.call(cmd, cwd=ML)
 

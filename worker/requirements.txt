@@ -1,0 +1,13 @@
+# Cumbre worker (Modal). The Modal image installs the runtime libs itself;
+# this is for local `modal run` / dev.
+modal>=0.64
+# runtime libs the worker imports from ml/ (mirror ml/requirements.txt):
+librosa>=0.10
+soundfile>=0.12
+pyloudnorm>=0.1.1
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+pandas>=2.0
+pronouncing>=0.2.0
+openai>=1.0

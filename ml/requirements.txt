@@ -1,0 +1,23 @@
+# Cumbre engine — core (pip install -r requirements.txt)
+librosa>=0.10
+soundfile>=0.12
+pyloudnorm>=0.1.1
+numpy>=1.24
+scipy>=1.10
+pronouncing>=0.2.0   # CMUdict rhyme/syllable engine for the lyrics layer
+scikit-learn>=1.3
+pandas>=2.0
+
+# fame-blind training (--hf optional)
+datasets>=2.14.0
+huggingface_hub>=0.20.0
+
+# --- optional pro-grade upgrades (engine auto-detects if installed) ---
+# essentia-tensorflow   # high-level ML heads: danceability, mood, valence, genre
+# madmom                # SOTA beat/downbeat -> tempo, time_signature
+# demucs                # stem separation -> vocal prominence / instrumentalness
+# allin1                # music structure + time-to-hook (needs torch)
+
+# --- for reusing/refitting the SMU model ---
+# torch>=2.0
+# torchaudio>=2.0

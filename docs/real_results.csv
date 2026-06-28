@@ -1,0 +1,4 @@
+file,genre,summit,grade,music,tempo,key,lufs,crest,clip_pct,stereo,intro_s,fixes
+"Tame Impala, JENNIE - Dracula (JEN",edm,81.4,B,81.4,114.8,G minor,-7.49,13.53,0.0574,0.917,9.07,"Master is -7.49 LUFS; streaming normalizes to -14, so it will be turned down 6.5 dB. Typical for edm."
+Drake - Janice STFU.mp3,hiphop,82.5,B,82.5,126.0,C# minor,-10.18,12.31,0.0084,0.886,0.19,"Master is -10.18 LUFS; streaming normalizes to -14, so it will be turned down 3.8 dB. Typical for hiphop."
+noname.mp3,hiphop,71.3,C,71.3,143.6,C# major,-5.21,9.3,0.126,0.571,0.23,"Master is -5.21 LUFS; streaming normalizes to -14, so it will be turned down 8.8 dB. Consider less limiting. | Clipping detected on 0.126% of samples — pull the ceiling to -1 dBTP."

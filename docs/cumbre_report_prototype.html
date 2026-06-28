@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cumbre — Your Song Report</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#111a33; --card:#16203c; --card2:#1b2748;
+    --ink:#eaf0ff; --muted:#9fb0d4; --line:#26345c;
+    --summit:#ff8a3d; --summit2:#ffd166; --good:#36d399; --warn:#fbbd23; --bad:#f87272;
+    --accent:#5b8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a2747 0%,var(--bg) 55%);
+    color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 80px}
+  /* header */
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.3px;font-size:20px}
+  .peak{width:26px;height:26px}
+  .badge{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+    background:rgba(91,140,255,.15);color:#bcd0ff;border:1px solid #2d3f6b;padding:5px 11px;border-radius:999px}
+  .song{margin:18px 0 6px;font-size:26px;font-weight:800}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:22px}
+  /* summit gauge */
+  .hero{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);
+    border-radius:20px;padding:26px;display:grid;grid-template-columns:240px 1fr;gap:26px;align-items:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.35)}
+  @media(max-width:640px){.hero{grid-template-columns:1fr;text-align:center}}
+  .gauge{position:relative;width:220px;height:160px;margin:auto}
+  .gscore{position:absolute;left:0;right:0;top:64px;text-align:center}
+  .gscore b{font-size:52px;font-weight:800;background:linear-gradient(90deg,var(--summit),var(--summit2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .gscore span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+  .grade-line{font-size:15px;color:var(--muted)}
+  .grade-line b{color:var(--ink)}
+  .climb{margin-top:14px;font-size:14px;color:var(--summit2);font-weight:600}
+  /* two scores */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+  @media(max-width:640px){.duo{grid-template-columns:1fr}}
+  .scard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .scard h3{margin:0 0 2px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .scard .val{font-size:34px;font-weight:800}
+  .scard .val small{font-size:15px;color:var(--muted);font-weight:600}
+  .pct{color:var(--good)}
+  /* sections */
+  h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);margin:32px 0 12px}
+  .bars{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 20px}
+  .bar{display:grid;grid-template-columns:130px 1fr 46px;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #1f2c4f}
+  .bar:last-child{border-bottom:none}
+  .bar .lab{font-size:14px;color:#cdd9f5;text-transform:capitalize}
+  .track{height:9px;background:#0e1730;border-radius:999px;overflow:hidden}
+  .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),#7aa2ff)}
+  .bar .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px}
+  /* fixes */
+  .fixes{display:grid;gap:12px}
+  .fix{display:grid;grid-template-columns:34px 1fr;gap:14px;
+    background:var(--card);border:1px solid var(--line);border-left:3px solid var(--summit);border-radius:14px;padding:16px 18px}
+  .fix .n{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;
+    background:rgba(255,138,61,.15);color:var(--summit2)}
+  .fix .t b{display:block;margin-bottom:3px}
+  .fix .t span{color:var(--muted);font-size:14px}
+  /* feature grid */
+  .feat{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:640px){.feat{grid-template-columns:repeat(2,1fr)}}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .chip .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .chip .v{font-size:18px;font-weight:700;margin-top:3px}
+  .flag{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:700;margin-left:6px;vertical-align:middle}
+  .flag.warn{background:rgba(251,189,35,.15);color:var(--warn)}
+  .flag.ok{background:rgba(54,211,153,.15);color:var(--good)}
+  .cta{margin-top:34px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .btn{padding:13px 22px;border-radius:12px;font-weight:700;font-size:15px;border:1px solid transparent;cursor:pointer}
+  .btn.primary{background:linear-gradient(90deg,var(--summit),var(--summit2));color:#1a1205}
+  .btn.ghost{background:transparent;border-color:#2d3f6b;color:var(--ink)}
+  .foot{text-align:center;color:#6c7da6;font-size:12px;margin-top:30px}
+  .disc{text-align:center;color:#5d6e96;font-size:11px;margin-top:8px;max-width:560px;margin-left:auto;margin-right:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <svg class="peak" viewBox="0 0 32 32" fill="none"><path d="M2 27 L12 8 L17 17 L21 11 L30 27 Z" fill="url(#g)"/><path d="M12 8 l3 5.6 -3 1.6 -2.4 -1.3z" fill="#fff" opacity=".9"/><defs><linearGradient id="g" x1="0" y1="32" x2="0" y2="0"><stop offset="0" stop-color="#ff8a3d"/><stop offset="1" stop-color="#ffd166"/></linearGradient></defs></svg>
+      Cumbre
+    </div>
+    <div class="badge">Genre · Pop</div>
+  </div>
+
+  <div class="song">"Midnight Avenue"</div>
+  <div class="sub">Analyzed in 38s · 3:24 · uploaded by you · 1 credit used</div>
+
+  <!-- HERO: combined summit score -->
+  <div class="hero">
+    <div>
+      <div class="gauge">
+        <svg viewBox="0 0 220 160" width="220" height="160">
+          <path d="M20 140 A90 90 0 0 1 200 140" fill="none" stroke="#0e1730" stroke-width="16" stroke-linecap="round"/>
+          <path id="arc" d="M20 140 A90 90 0 0 1 200 140" fill="none" stroke="url(#ag)" stroke-width="16" stroke-linecap="round"
+                stroke-dasharray="283" stroke-dashoffset="99"/>
+          <defs><linearGradient id="ag" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff8a3d"/><stop offset="1" stop-color="#ffd166"/></linearGradient></defs>
+        </svg>
+        <div class="gscore"><b>72</b><span>Summit Score</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="grade-line">Combined grade <b>B</b> · You're <b>two thirds up the mountain</b>.</div>
+      <p style="color:var(--muted);margin:10px 0 0">A strong, release-ready foundation. The mix translates well and the
+        hook lands early. Tighten the low end and lift the chorus dynamics and this clears the ridge.</p>
+      <div class="climb">▲ 8 points from your last version (V1 → V2)</div>
+    </div>
+  </div>
+
+  <!-- TWO SCORES -->
+  <div class="duo">
+    <div class="scard"><h3>Music</h3><div class="val">76<small>/100</small></div>
+      <div style="color:var(--muted);font-size:13px;margin-top:4px">Top 18% of Pop uploads</div></div>
+    <div class="scard"><h3>Lyrics</h3><div class="val">68<small>/100</small></div>
+      <div style="color:var(--muted);font-size:13px;margin-top:4px">Strong theme · hook could repeat more</div></div>
+  </div>
+
+  <!-- TOP 3 FIXES (the product) -->
+  <h2 class="sec">Top 3 fixes to reach the summit</h2>
+  <div class="fixes">
+    <div class="fix"><div class="n">1</div><div class="t"><b>Ease the limiter — you're over-compressed.</b>
+      <span>Crest factor is 5.1 dB; Pop sits around 8–14. Back off ~2 dB of limiting for punch. You're at −8.4 LUFS,
+      so streaming will turn you down 5.6 dB anyway — loudness isn't buying you anything.</span></div></div>
+    <div class="fix"><div class="n">2</div><div class="t"><b>Mono-check the low end.</b>
+      <span>Stereo correlation dips negative below 120 Hz — the bass may cancel on phone speakers and club mono. Center the sub.</span></div></div>
+    <div class="fix"><div class="n">3</div><div class="t"><b>Lift the chorus, lyrically.</b>
+      <span>Your hook repeats twice; the Pop median is four. One more chorus repeat raises memorability without adding length.</span></div></div>
+  </div>
+
+  <!-- MUSIC SUBSCORES -->
+  <h2 class="sec">Music breakdown</h2>
+  <div class="bars" id="bars"></div>
+
+  <!-- FEATURE VECTOR (transparency) -->
+  <h2 class="sec">Extracted features (computed in-house)</h2>
+  <div class="feat">
+    <div class="chip"><div class="k">Tempo</div><div class="v">118 BPM</div></div>
+    <div class="chip"><div class="k">Key</div><div class="v">A minor</div></div>
+    <div class="chip"><div class="k">Loudness</div><div class="v">−8.4 LUFS <span class="flag warn">loud</span></div></div>
+    <div class="chip"><div class="k">True peak</div><div class="v">−0.2 dBTP</div></div>
+    <div class="chip"><div class="k">Energy</div><div class="v">0.71</div></div>
+    <div class="chip"><div class="k">Danceability</div><div class="v">0.78</div></div>
+    <div class="chip"><div class="k">Intro length</div><div class="v">6.2 s <span class="flag ok">good</span></div></div>
+    <div class="chip"><div class="k">Clipping</div><div class="v">0.0%</div></div>
+  </div>
+
+  <div class="cta">
+    <button class="btn primary">Upload a new version</button>
+    <button class="btn ghost">Download full report (PDF)</button>
+  </div>
+
+  <div class="foot">Cumbre · Get your song to the summit</div>
+  <div class="disc">Cumbre gives AI-generated craft feedback to help you improve your song. It is informational, not
+    professional A&amp;R advice, and is not a prediction of commercial success. Your audio is analyzed and then deleted; we never display or store your lyrics.</div>
+</div>
+
+<script>
+  // animate the summit arc to 72%
+  const score=72, total=283, arc=document.getElementById('arc');
+  arc.style.transition='stroke-dashoffset 1.2s ease';
+  setTimeout(()=>{arc.style.strokeDashoffset = total*(1-score/100);},150);
+
+  // music subscores (shape mirrors cumbre_engine.score output)
+  const subs={loudness:43, dynamics:35, "tempo fit":100, danceability:88, arrangement:100, stereo:55};
+  const colorFor=v=> v>=75?'linear-gradient(90deg,#36d399,#5be0a8)': v>=50?'linear-gradient(90deg,#5b8cff,#7aa2ff)':'linear-gradient(90deg,#fbbd23,#f8a93b)';
+  const el=document.getElementById('bars');
+  Object.entries(subs).forEach(([k,v])=>{
+    const row=document.createElement('div');row.className='bar';
+    row.innerHTML=`<div class="lab">${k}</div><div class="track"><div class="fill" style="width:0%"></div></div><div class="num">${v}</div>`;
+    el.appendChild(row);
+    const fill=row.querySelector('.fill'); fill.style.background=colorFor(v);
+    requestAnimationFrame(()=>{fill.style.transition='width .9s ease';setTimeout(()=>fill.style.width=v+'%',120)});
+  });
+</script>
+</body>
+</html>

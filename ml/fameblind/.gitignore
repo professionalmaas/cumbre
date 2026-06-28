@@ -1,4 +1,0 @@
-*.csv
-*.csv.tmp
-__pycache__/
-*.joblib

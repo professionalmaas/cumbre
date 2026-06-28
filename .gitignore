@@ -1,9 +1,17 @@
 __pycache__/
-*.py[cod]
-.env
+*.pyc
+*.pt
+*.pkl
 .venv/
-venv/
+node_modules/
+.env
+.env.local
+*.wav
+cumbre_*_labeled.csv
+cumbre_training*.csv
+# local Kaggle / HF caches (keep outside repo)
 *.csv
-*.csv.tmp
+!ml/tracks_manifest.csv
+!docs/real_results.csv
+_zip_extract*/
 *.joblib
-.DS_Store

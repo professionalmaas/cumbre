@@ -1,0 +1,10 @@
+title,artist,genre,year,expected_label,filename
+Janice,Drake,hiphop,2026,hit,janice
+Shabang,Drake,hiphop,2026,hit,shabang
+Motion Party,BossMan Dlow,hiphop,2026,hit,motion_party
+The Cure,Olivia Rodrigo,pop,2026,hit,the_cure
+Die With A Smile,Lady Gaga & Bruno Mars,pop,2026,hit,die_with_a_smile
+Hate That I Made You Love Me,Ariana Grande,pop,2026,hit,hate_that_i_made_you_love_me
+Dracula,Tame Impala & JENNIE,edm,2026,hit,dracula
+Stateside,PinkPantheress with Zara Larsson,edm,2026,hit,stateside
+WHERE WE GO,Marshmello & Thomas Rhett,edm,2026,hit,where_we_go
