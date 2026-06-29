@@ -318,6 +318,20 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
   }
 }
 
+# Browser uploads the audio directly to S3 via a presigned PUT — the bucket must allow
+# cross-origin PUT/GET from the app origin or the browser blocks it (the "upload didn't go
+# through" error). Origin = the app host.
+resource "aws_s3_bucket_cors_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+  cors_rule {
+    allowed_methods = ["PUT", "GET", "HEAD"]
+    allowed_origins = ["https://${var.host_header}"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
 resource "aws_s3_bucket" "artifacts" {
   bucket        = "${local.prefix}-artifacts-${data.aws_caller_identity.current.account_id}"
   force_destroy = false
