@@ -1,0 +1,61 @@
+#!/bin/sh
+# ============================================================
+#  CUMBRE SAFE-GIT GUARDRAIL  -  pre-commit
+#  Tells you which repo + branch you're committing to, blocks
+#  direct commits to main/master, blocks junk/local files, runs
+#  an advisory secret scan, and enforces a BUILD-GREEN gate
+#  (TypeScript must compile before anything is committed).
+#  Overrides:  GIT_ALLOW_MAIN=YES  GIT_ALLOW_JUNK=YES  SKIP_BUILD_CHECK=1
+# ============================================================
+branch=$(git symbolic-ref --short -q HEAD 2>/dev/null)
+url=$(git config --get remote.origin.url 2>/dev/null)
+repo=$(basename "${url:-$(pwd)}" .git)
+root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+printf '\n'
+printf '  +--------------------------------------------------+\n'
+printf '  |  CUMBRE COMMIT CHECK                              |\n'
+printf '  |  repo:   %-39s|\n' "$repo"
+printf '  |  branch: %-39s|\n' "$branch"
+printf '  +--------------------------------------------------+\n'
+
+# Detached HEAD = your commit can get lost. Stop.
+if [ -z "$branch" ]; then
+  printf '\n  X BLOCKED: detached HEAD (not on a branch). A commit here can be LOST.\n'
+  printf '      git switch -c my-work-branch   or   git switch PRD\n\n'
+  exit 1
+fi
+
+# Protect main/master from direct commits (flow: feature -> dev -> PRD via PR).
+case "$branch" in
+  main|master)
+    if [ "$GIT_ALLOW_MAIN" = "YES" ]; then
+      printf '\n  ! Override active: committing to %s anyway.\n\n' "$branch"
+    else
+      printf '\n  X BLOCKED: do not commit directly to "%s". Make a branch:\n' "$branch"
+      printf '      git switch -c feat/my-change\n\n'
+      exit 1
+    fi ;;
+esac
+
+# Block junk / local-only files: write-probes + any .claude/ agent config.
+# Override:  GIT_ALLOW_JUNK=YES git commit ...
+staged=$(git diff --cached --name-only --diff-filter=AM 2>/dev/null)
+junk=$(printf '%s\n' "$staged" | grep -E '(^|/)(\.wtest|\.__wtest[0-9]*|\.write_test|\.wt)$|(^|/)\.claude/' 2>/dev/null)
+if [ -n "$junk" ]; then
+  if [ "$GIT_ALLOW_JUNK" = "YES" ]; then
+    printf '\n  ! Override active: committing flagged junk/local files anyway.\n\n'
+  else
+    printf '\n  X BLOCKED: junk / local-only files staged:\n'
+    printf '%s\n' "$junk" | sed 's/^/        /'
+    printf '    Unstage:   git restore --staged <file>   (override: GIT_ALLOW_JUNK=YES)\n\n'
+    exit 1
+  fi
+fi
+
+# Advisory secret scan (warn-only unless STRICT_SECRETS=1).
+[ -f "$root/.githooks/secret-scan.sh" ] && sh "$root/.githooks/secret-scan.sh"
+
+# NOTE: the BUILD-GREEN gate (TypeScript must compile) runs in pre-PUSH, not here,
+# so commits stay instant. Nothing broken can reach GitHub/CI.
+exit 0

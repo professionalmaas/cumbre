@@ -1,0 +1,27 @@
+# Cumbre — local-dev harness (DEV_MODE). Postgres only; everything else (auth, storage,
+# orchestration, worker) runs on localhost with no AWS. See dev/README.md.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   npm --prefix web run dev:setup     # applies db/001 -> 002 -> 003
+#
+# Port 55432 on the host (avoids clashing with a system Postgres on 5432).
+services:
+  db:
+    image: postgres:16
+    container_name: cumbre-dev-db
+    environment:
+      POSTGRES_USER: cumbre
+      POSTGRES_PASSWORD: cumbre
+      POSTGRES_DB: cumbre
+    ports:
+      - "55432:5432"
+    volumes:
+      - cumbre_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cumbre -d cumbre"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  cumbre_dev_pgdata:

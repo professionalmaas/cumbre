@@ -1,0 +1,79 @@
+#!/bin/sh
+# ============================================================
+#  CUMBRE SAFE-GIT GUARDRAIL  -  pre-push
+#  Shows which GitHub repo + branch you're pushing to. Blocks
+#  pushes to main/master and force-pushes (history loss).
+#  Overrides:  GIT_ALLOW_MAIN=YES   GIT_ALLOW_FORCE=YES
+# ============================================================
+remote_name="$1"
+remote_url="$2"
+repo=$(basename "${remote_url:-unknown}" .git)
+root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+printf '\n'
+printf '  ============================================================\n'
+printf '   CUMBRE PUSH CHECK  ->  sending commits to GitHub\n'
+printf '   remote name : %s\n' "$remote_name"
+printf '   GitHub repo : %s\n' "$repo"
+printf '   full URL    : %s\n' "$remote_url"
+printf '  ============================================================\n'
+
+status=0
+z=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$remote_ref" ] && continue
+  target=${remote_ref##refs/heads/}
+  printf '   -> branch: %s\n' "$target"
+
+  # 1) Protect main / master
+  case "$target" in
+    main|master)
+      if [ "$GIT_ALLOW_MAIN" = "YES" ]; then
+        printf '      ! override: pushing to %s\n' "$target"
+      else
+        printf '\n  X BLOCKED: do not push directly to "%s" (flow: feature -> dev -> PRD via PR).\n' "$target"
+        printf '     Push your branch instead:  git push -u origin %s\n' "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+        status=1
+      fi ;;
+  esac
+
+  # 2) Detect force / history-rewrite
+  if [ "$remote_sha" != "$z" ] && [ "$local_sha" != "$z" ]; then
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+      if [ "$GIT_ALLOW_FORCE" = "YES" ]; then
+        printf '      ! override: force-push allowed for %s\n' "$target"
+      else
+        printf '\n  X BLOCKED: this looks like a FORCE push to "%s" (erases GitHub commits).\n' "$target"
+        printf '     If you are 100%% sure:  GIT_ALLOW_FORCE=YES git push ...\n'
+        status=1
+      fi
+    fi
+  fi
+done
+
+# ── BUILD-GREEN GATE ─────────────────────────────────────────────────────────
+# Nothing with broken TypeScript reaches GitHub/CI. Fast typecheck (tsc --noEmit,
+# incremental), not a full prod build (CI runs that). Runs at push time so commits
+# stay instant.  Override once:  SKIP_BUILD_CHECK=1 git push ...
+if [ "$status" -eq 0 ] && [ "$SKIP_BUILD_CHECK" != "1" ]; then
+  if [ -d "$root/web/node_modules" ]; then
+    printf '   . typechecking web ...\n'
+    ( cd "$root/web" && npm run -s typecheck ) || status=1
+  fi
+  if [ -d "$root/steps/node_modules" ]; then
+    printf '   . typechecking steps ...\n'
+    ( cd "$root/steps" && npm run -s typecheck ) || status=1
+  fi
+  if [ "$status" -ne 0 ]; then
+    printf '\n  X BLOCKED: build is not green (TypeScript errors above).\n'
+    printf '     Fix them, or bypass once:  SKIP_BUILD_CHECK=1 git push ...\n'
+  fi
+fi
+
+if [ "$status" -ne 0 ]; then
+  printf '\n  Push stopped by guardrail. Nothing was sent.\n\n'
+else
+  printf '   OK - guardrails passed (build is green). Pushing...\n\n'
+fi
+exit $status

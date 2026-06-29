@@ -1,0 +1,120 @@
+{
+  "_comment": "Data contract for the Cumbre Report screen. POST /analyze (multipart: audio file + JSON below) returns this object. Every value the Report renders should come from here — the prototype hardcodes these. Numbers shown are the prototype's example song 'Higher Ground'.",
+
+  "request": {
+    "genre": "Indie Pop",
+    "depth": "deep",
+    "lens": "ar"
+  },
+
+  "response": {
+    "song": {
+      "title": "Higher Ground",
+      "artistName": "you",
+      "genre": "Indie Pop",
+      "key": "F# minor",
+      "tempoBpm": 122,
+      "durationSec": 204,
+      "timeSignature": "4/4"
+    },
+    "review": {
+      "lens": "ar",
+      "depth": "deep"
+    },
+    "scores": {
+      "overall": 78,
+      "band": "ascending",
+      "music": 82,
+      "lyrics": 74,
+      "verdict": "Strong bones, real altitude. Three clean moves put you on the summit."
+    },
+    "marketFit": {
+      "genre": "Indie Pop",
+      "you": 78,
+      "genreAvg": 71,
+      "chartReady": 82,
+      "pointsToChartReady": 4
+    },
+    "readiness": {
+      "playlist": "ready",
+      "radio": "close",
+      "sync": "ready"
+    },
+    "structure": {
+      "sections": [
+        { "label": "Intro",   "energy": 0.25 },
+        { "label": "V1",      "energy": 0.45 },
+        { "label": "Pre",     "energy": 0.60 },
+        { "label": "Chorus1", "energy": 0.85 },
+        { "label": "V2",      "energy": 0.50 },
+        { "label": "Chorus2", "energy": 0.80 },
+        { "label": "Bridge",  "energy": 0.55 },
+        { "label": "Outro",   "energy": 0.30 }
+      ],
+      "peakIndex": 3,
+      "liftIndex": 5
+    },
+    "highlight": {
+      "startSec": 108,
+      "endSec": 132,
+      "label": "2nd chorus"
+    },
+    "keep": [
+      { "title": "The hook is sticky.", "note": "The chorus melody is instantly singable — your strongest hold on the wall." },
+      { "title": "Production sits pro.", "note": "Clean low end and a present vocal — this already reads radio-grade." },
+      { "title": "Real emotional pull.", "note": "Verse 1 lands honest and unforced — don't over-polish it." }
+    ],
+    "fixes": [
+      { "rank": 1, "title": "Lift the second chorus", "note": "The summit chorus lands at the same height as the first. Stack a harmony or octave vocal so the peak actually feels higher.", "impact": { "points": 6, "area": "Music" } },
+      { "rank": 2, "title": "Anchor verse 2's imagery", "note": "Lines 3–4 drift abstract. Tie them to one concrete image and the story pulls climbers all the way in.", "impact": { "points": 5, "area": "Lyrics" } },
+      { "rank": 3, "title": "Carve space in the low-mids", "note": "200–400 Hz is crowded. Trim the rhythm guitar a couple dB so the vocal can breathe on the climb.", "impact": { "points": 4, "area": "Mix" } }
+    ],
+    "subscores": {
+      "music": [
+        { "label": "Hook strength", "value": 84 },
+        { "label": "Production", "value": 86 },
+        { "label": "Melody", "value": 80 },
+        { "label": "Groove", "value": 82 },
+        { "label": "Mix balance", "value": 76 }
+      ],
+      "lyrics": [
+        { "label": "Rhyme craft", "value": 79 },
+        { "label": "Imagery", "value": 76 },
+        { "label": "Emotional pull", "value": 75 },
+        { "label": "Memorability", "value": 73 },
+        { "label": "Story", "value": 70 }
+      ]
+    },
+    "mix": {
+      "lufs": -7.2,
+      "lufsTarget": -14,
+      "dynamicRange": 8,
+      "truePeakDb": -0.8,
+      "stereoWidthPct": 78,
+      "note": "Your master is ~7 dB louder than Spotify's −14 LUFS target, so it'll be turned down on playback. Pull the limiter back for more punch and breathing room."
+    },
+    "comparables": {
+      "artists": ["Novo Amor", "Local Natives", "Lord Huron"],
+      "playlists": ["Indie Chill", "Atmospheric Mornings", "Late-Night Drives"],
+      "audience": "25–34 · US · UK · AU"
+    },
+    "features": {
+      "key": "F# minor",
+      "tempoBpm": 122,
+      "energy": 0.71,
+      "danceability": 0.64,
+      "valence": 0.42,
+      "loudnessDb": -7.2,
+      "timeSignature": "4/4",
+      "durationSec": 204
+    }
+  },
+
+  "enums": {
+    "band": ["base camp", "ascending", "summit"],
+    "readiness": ["not yet", "close", "ready"],
+    "lens": ["listener", "producer", "ar"],
+    "depth": ["fast", "deep"],
+    "impactArea": ["Music", "Lyrics", "Mix"]
+  }
+}

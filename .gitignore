@@ -1,0 +1,42 @@
+__pycache__/
+*.pyc
+*.pt
+*.pkl
+.venv/
+node_modules/
+.env
+.env.local
+.env.dev
+*.wav
+cumbre_*_labeled.csv
+cumbre_training*.csv
+
+# Local-dev harness (DEV_MODE) — transient audio uploads written to local disk
+web/.dev-uploads/
+
+# Terraform secrets — never commit real tfvars
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+
+# Step Lambda build output
+steps/dist/
+steps/node_modules/
+
+# Next.js build output
+.next/
+.DS_Store
+
+# Copyrighted demo clips — never commit (replace with cleared/owned clips before launch)
+web/public/samples/dracula.mp3
+web/public/samples/janice.mp3
+
+# numba JIT cache (local worker speedup)
+.numba_cache/
+worker/.numba_cache/
+
+# copyrighted design-handoff audio (reference only, do not ship)
+docs/design_v2/assets/*.mp3
+
+# local agent config — never tracked
+.claude/

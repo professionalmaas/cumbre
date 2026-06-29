@@ -1,0 +1,25 @@
+name: Terraform
+
+on:
+  push:
+    branches: [PRD]
+    paths:
+      - 'infra/terraform/**'
+      - 'infra/sfn/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    paths:
+      - 'infra/terraform/**'
+      - 'infra/sfn/**'
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    uses: professionalmaas/home/.github/workflows/_terraform-layer.yml@PRD
+    with:
+      layer_name: cumbre-prd
+      tf_dir:     infra/terraform
+      aws_region: us-east-1
+      is_push:    ${{ github.event_name == 'push' && github.ref == 'refs/heads/PRD' }}
+    secrets:
+      aws_role_arn: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}

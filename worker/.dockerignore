@@ -1,0 +1,38 @@
+# Never include in the build context
+.env
+.env.*
+.env.local
+
+# Web app — not needed in the worker image
+web/
+supabase/
+lib/
+
+# Infra / CI
+infra/
+.github/
+docs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Dev tooling
+.cursor
+.vscode
+*.log
+
+# Tests / training data (not needed in runtime image)
+ml/t_*.wav
+ml/tracks_manifest.csv
+ml/test_*.py
+ml/train_fameblind.py
+ml/rebuild_dataset.py
+ml/import_spotify_csv.py
+
+# Git
+.git
+.gitignore

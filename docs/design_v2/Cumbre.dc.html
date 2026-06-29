@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#0d0a06; }
+  ::-webkit-scrollbar{ width:0; height:0; }
+  input, button{ font-family:inherit; }
+  input::placeholder{ color:#7a6e57; }
+  input:focus{ outline:none; border-color:rgba(246,198,74,0.55) !important; }
+  @keyframes cumbreFade{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes cumbreBreathe{ 0%,100%{ transform:scale(1); opacity:.85; } 50%{ transform:scale(1.06); opacity:1; } }
+  @keyframes cumbreFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-5px); } }
+  @keyframes cumbreShimmer{ 0%{ background-position:0% 50%; } 100%{ background-position:200% 50%; } }
+  @keyframes cumbreRing{ 0%{ transform:scale(.7); opacity:.7; } 100%{ transform:scale(1.9); opacity:0; } }
+  @keyframes cumbreFlag{ 0%,100%{ transform:rotate(-3deg); } 50%{ transform:rotate(4deg); } }
+</style>
+</helmet>
+
+<div style="min-height:100dvh; background:#0d0a06; display:flex; justify-content:center; align-items:stretch; font-family:'Hanken Grotesk',-apple-system,sans-serif; color:#f3ece0;">
+  <div style="position:relative; width:100%; max-width:440px; min-height:100dvh; overflow:hidden; background:linear-gradient(180deg,#1c140b 0%,#130d07 46%,#0c0905 100%); display:flex; flex-direction:column;">
+
+    <!-- contour layer -->
+    <svg viewBox="0 0 440 900" preserveAspectRatio="xMidYMin slice" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:.55;">
+      <g fill="none" stroke="#f6c64a" stroke-width="1">
+        <ellipse cx="300" cy="40" rx="70" ry="44" style="opacity:.05"></ellipse>
+        <ellipse cx="300" cy="40" rx="120" ry="78" style="opacity:.045"></ellipse>
+        <ellipse cx="300" cy="40" rx="178" ry="116" style="opacity:.04"></ellipse>
+        <ellipse cx="300" cy="40" rx="244" ry="160" style="opacity:.032"></ellipse>
+        <ellipse cx="300" cy="40" rx="320" ry="210" style="opacity:.026"></ellipse>
+        <ellipse cx="300" cy="40" rx="404" ry="266" style="opacity:.02"></ellipse>
+        <ellipse cx="300" cy="40" rx="498" ry="328" style="opacity:.015"></ellipse>
+      </g>
+    </svg>
+    <!-- sunrise glow layer -->
+    <div style="{{ heroGlow }}" data-glow="hero"></div>
+
+    <!-- top bar -->
+    <div style="position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between; padding:18px 22px 6px;">
+      <div style="display:flex; align-items:center; gap:9px;">
+        <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ back }}" style="all:unset; cursor:pointer; width:34px; height:34px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(246,198,74,0.14); color:#cbb994; margin-right:2px;">‹</button>
+        </sc-if>
+        <svg width="17" height="15" viewBox="0 0 17 15" style="display:block;">
+          <polygon points="8.5,1 16,14 1,14" fill="url(#wm)"></polygon>
+          <defs><linearGradient id="wm" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e8552d"></stop><stop offset="1" stop-color="#f6c64a"></stop></linearGradient></defs>
+        </svg>
+        <span style="font-family:'Space Mono',monospace; font-size:12.5px; letter-spacing:4px; color:#e8dcc6; font-weight:700;">CUMBRE</span>
+      </div>
+      <span style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#6f6450; text-transform:uppercase;">{{ topRight }}</span>
+    </div>
+
+    <!-- ============ SCREEN 0 : SAMPLE / HOW IT WORKS ============ -->
+    <sc-if value="{{ isSample }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative; z-index:2; flex:1; overflow-y:auto; padding:14px 26px 34px;">
+      <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; color:#c98a4e; text-transform:uppercase; margin-top:16px;">AI Song Coach</div>
+      <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:39px; line-height:1.05; letter-spacing:-0.5px; margin:14px 0 0; color:#f7efe2;">See how your<br>song <span style="font-style:italic; background:linear-gradient(120deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">climbs.</span></h1>
+      <p style="font-size:14.5px; line-height:1.55; color:#a89a82; margin:14px 0 0; max-width:332px;">A pro climbing guide for your music. Drop a track and get a clear, scored route to the summit — what's working, and the exact moves to get higher.</p>
+
+      <!-- how it works -->
+      <div style="margin-top:30px;">
+        <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase; margin-bottom:6px;">How it works</div>
+        <div style="display:flex; gap:15px; padding:15px 0; border-top:1px solid rgba(246,198,74,0.12);">
+          <div style="font-family:'Newsreader',serif; font-size:26px; line-height:1; background:linear-gradient(135deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; width:24px; flex:none;">1</div>
+          <div><h3 style="font-size:15.5px; font-weight:600; margin:0; color:#f3ece0;">Drop your track</h3><p style="font-size:13px; line-height:1.5; color:#a89a82; margin:5px 0 0;">MP3 or WAV, up to 12 minutes. Pick the genre you're climbing in.</p></div>
+        </div>
+        <div style="display:flex; gap:15px; padding:15px 0; border-top:1px solid rgba(246,198,74,0.12);">
+          <div style="font-family:'Newsreader',serif; font-size:26px; line-height:1; background:linear-gradient(135deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; width:24px; flex:none;">2</div>
+          <div><h3 style="font-size:15.5px; font-weight:600; margin:0; color:#f3ece0;">Your guide scores the climb</h3><p style="font-size:13px; line-height:1.5; color:#a89a82; margin:5px 0 0;">We listen to the mix and read every lyric, then score music and words across a dozen holds.</p></div>
+        </div>
+        <div style="display:flex; gap:15px; padding:15px 0; border-top:1px solid rgba(246,198,74,0.12);">
+          <div style="font-family:'Newsreader',serif; font-size:26px; line-height:1; background:linear-gradient(135deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; width:24px; flex:none;">3</div>
+          <div><h3 style="font-size:15.5px; font-weight:600; margin:0; color:#f3ece0;">Get the route to the summit</h3><p style="font-size:13px; line-height:1.5; color:#a89a82; margin:5px 0 0;">A 0–100 summit score, your Top 3 fixes and every subscore — clear moves, in order.</p></div>
+        </div>
+      </div>
+
+      <!-- sample reports -->
+      <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase; margin-top:30px;">Sample reports</div>
+
+      <!-- Dracula -->
+      <div style="margin-top:12px; border-radius:18px; padding:16px 18px; background:linear-gradient(180deg,rgba(232,85,45,0.13),rgba(20,14,8,0.35)); border:1px solid rgba(246,198,74,0.18);">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="position:relative; width:118px; flex:none; display:flex; flex-direction:column; align-items:center;">
+            {{ sampleDracula }}
+            <div style="margin-top:-30px; text-align:center;">
+              <div style="font-family:'Newsreader',serif; font-size:30px; line-height:1; color:#f7efe2;">81</div>
+              <div style="font-family:'Space Mono',monospace; font-size:8.5px; letter-spacing:2px; color:#f6c64a; text-transform:uppercase; margin-top:2px;">Summit</div>
+            </div>
+          </div>
+          <div style="min-width:0;">
+            <div style="font-family:'Newsreader',serif; font-size:20px; color:#f7efe2; line-height:1.1;">Dracula</div>
+            <div style="font-family:'Space Mono',monospace; font-size:10px; color:#8c7f68; margin-top:3px;">Tame Impala, JENNIE · Electro-Pop</div>
+            <p style="font-size:12.5px; line-height:1.45; color:#a89a82; margin:8px 0 0;">Hypnotic groove, glossy hooks — a sharper drop tips it onto the summit.</p>
+            <button onClick="{{ playDracula }}" style="all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:7px; margin-top:11px; padding:7px 13px; border-radius:999px; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.5px; color:#f6c64a; border:1px solid rgba(246,198,74,0.3);">{{ draculaLabel }}</button>
+          </div>
+        </div>
+        <audio ref="{{ draculaAudio }}" src="assets/dracula.mp3" onEnded="{{ onAudioEnd }}" preload="none"></audio>
+      </div>
+
+      <!-- Janice -->
+      <div style="margin-top:11px; border-radius:18px; padding:16px 18px; background:linear-gradient(180deg,rgba(232,85,45,0.1),rgba(20,14,8,0.32)); border:1px solid rgba(246,198,74,0.14);">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="position:relative; width:118px; flex:none; display:flex; flex-direction:column; align-items:center;">
+            {{ sampleJanice }}
+            <div style="margin-top:-30px; text-align:center;">
+              <div style="font-family:'Newsreader',serif; font-size:30px; line-height:1; color:#f7efe2;">66</div>
+              <div style="font-family:'Space Mono',monospace; font-size:8.5px; letter-spacing:2px; color:#fb7a3c; text-transform:uppercase; margin-top:2px;">Ascending</div>
+            </div>
+          </div>
+          <div style="min-width:0;">
+            <div style="font-family:'Newsreader',serif; font-size:20px; color:#f7efe2; line-height:1.1;">Janice</div>
+            <div style="font-family:'Space Mono',monospace; font-size:10px; color:#8c7f68; margin-top:3px;">Drake · Hip-Hop</div>
+            <p style="font-size:12.5px; line-height:1.45; color:#a89a82; margin:8px 0 0;">Blunt and confident — more low-end weight would carry it higher.</p>
+            <button onClick="{{ playJanice }}" style="all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:7px; margin-top:11px; padding:7px 13px; border-radius:999px; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.5px; color:#f6c64a; border:1px solid rgba(246,198,74,0.3);">{{ janiceLabel }}</button>
+          </div>
+        </div>
+        <audio ref="{{ janiceAudio }}" src="assets/janice.mp3" onEnded="{{ onAudioEnd }}" preload="none"></audio>
+      </div>
+
+      <div style="margin-top:12px; font-family:'Space Mono',monospace; font-size:10.5px; color:#8c7f68; text-align:center; letter-spacing:.5px;">EACH REPORT · TOP 3 FIXES · 11 SUBSCORES · FEATURE GRID</div>
+
+      <!-- privacy -->
+      <div style="margin-top:22px; display:flex; align-items:flex-start; gap:11px; padding:14px 15px; border-radius:13px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+        <svg width="15" height="13" viewBox="0 0 17 15" style="margin-top:2px; flex:none;"><polygon points="8.5,1 16,14 1,14" fill="#f6c64a"></polygon></svg>
+        <div style="font-size:12.5px; line-height:1.5; color:#ab9c84;"><span style="color:#e8dcc6;">Your audio is never stored.</span> We analyze your track, hand back your route, and discard the file — only your scores are kept.</div>
+      </div>
+
+      <button onClick="{{ goPay }}" style="all:unset; cursor:pointer; text-align:center; margin-top:24px; padding:17px; border-radius:15px; font-size:16px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); box-shadow:0 12px 32px -10px rgba(251,122,60,0.65);">See plans &amp; start climbing →</button>
+      <div style="text-align:center; font-family:'Space Mono',monospace; font-size:10.5px; color:#6f6450; margin-top:14px; letter-spacing:.5px;">Get your song to the summit.</div>
+    </div>
+    </sc-if>
+
+    <!-- ============ SCREEN 1 : UPLOAD ============ -->
+    <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative; z-index:2; flex:1; display:flex; flex-direction:column; padding:14px 26px 30px; overflow-y:auto;">
+      <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; color:#c98a4e; text-transform:uppercase; margin-top:18px;">AI Song Coach</div>
+      <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:40px; line-height:1.05; letter-spacing:-0.5px; margin:14px 0 0; color:#f7efe2;">Get your song<br>to the <span style="font-style:italic; background:linear-gradient(120deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">summit.</span></h1>
+      <p style="font-size:14.5px; line-height:1.55; color:#a89a82; margin:16px 0 0; max-width:330px;">Your guide listens to every note and reads every word, then maps the exact route to the top.</p>
+
+      <!-- upload zone -->
+      <div onClick="{{ toggleFile }}" style="margin-top:26px; cursor:pointer; border-radius:18px; padding:26px 22px; border:1.5px dashed rgba(246,198,74,0.26); background:rgba(255,255,255,0.018); position:relative; overflow:hidden; transition:all .25s;">
+        <sc-if value="{{ fileLoaded }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div style="width:46px; height:46px; flex:none; border-radius:12px; background:linear-gradient(135deg,#e8552d,#f6c64a); display:flex; align-items:center; justify-content:center; color:#1a0f05; font-size:18px;">♪</div>
+            <div style="min-width:0;">
+              <div style="font-size:15px; font-weight:600; color:#f3ece0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">higher_ground_v3.wav</div>
+              <div style="font-family:'Space Mono',monospace; font-size:11px; color:#7f7259; margin-top:3px;">WAV · 3:24 · 41.2 MB</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:2.5px; height:38px; margin-top:18px;">
+            <sc-for list="{{ waveform }}" as="bar" hint-placeholder-count="40">
+              <div style="{{ bar.style }}"></div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noFile }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px; padding:6px 0;">
+            <div style="width:48px; height:48px; border-radius:50%; border:1px solid rgba(246,198,74,0.25); display:flex; align-items:center; justify-content:center; color:#f6c64a; font-size:20px;">↑</div>
+            <div style="font-size:15px; font-weight:600; color:#e8dcc6; margin-top:4px;">Drop your track</div>
+            <div style="font-family:'Space Mono',monospace; font-size:11px; color:#7f7259;">MP3 · WAV · up to 12 min</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- genre -->
+      <div style="margin-top:30px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between;">
+          <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:21px; margin:0; color:#f3ece0;">What are we climbing?</h2>
+        </div>
+        <p style="font-size:12.5px; color:#8c7f68; margin:5px 0 0;">Pick a route — it tunes how your guide scores the song.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:9px; margin-top:16px;">
+          <sc-for list="{{ genres }}" as="g" hint-placeholder-count="8">
+            <button onClick="{{ g.onSelect }}" style="{{ g.style }}">{{ g.name }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="margin-top:30px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:21px; margin:0; color:#f3ece0;">Tune your climb</h2>
+        <p style="font-size:12.5px; color:#8c7f68; margin:5px 0 0;">How deep to go, and whose ears to use.</p>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase; margin-top:16px;">Depth</div>
+        <div style="display:flex; gap:9px; margin-top:10px;">
+          <sc-for list="{{ depths }}" as="d" hint-placeholder-count="2">
+            <button onClick="{{ d.onSelect }}" style="{{ d.style }}">
+              <div>{{ d.label }}</div>
+              <div style="font-family:'Space Mono',monospace; font-size:10px; opacity:.7; margin-top:2px;">{{ d.sub }}</div>
+            </button>
+          </sc-for>
+        </div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase; margin-top:18px;">Feedback lens</div>
+        <div style="display:flex; gap:9px; margin-top:10px;">
+          <sc-for list="{{ lenses }}" as="l" hint-placeholder-count="3">
+            <button onClick="{{ l.onSelect }}" style="{{ l.style }}">{{ l.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:24px;"></div>
+
+      <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px; font-size:11.5px; line-height:1.4; color:#8c7f68;">
+        <svg width="13" height="11" viewBox="0 0 17 15" style="flex:none;"><polygon points="8.5,1 16,14 1,14" fill="#c98a4e"></polygon></svg>
+        <span>We analyze your track, then delete it — your audio file is never stored.</span>
+      </div>
+      <button onClick="{{ primaryAction }}" style="{{ primaryStyle }}">{{ primaryLabel }}</button>
+      <div style="text-align:center; font-family:'Space Mono',monospace; font-size:10.5px; color:#6f6450; margin-top:14px; letter-spacing:.5px;">Your route is mapped in ~30 seconds.</div>
+    </div>
+    </sc-if>
+
+    <!-- ============ SCREEN 2 : ANALYZING ============ -->
+    <sc-if value="{{ isAnalyzing }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative; z-index:2; flex:1; display:flex; flex-direction:column; padding:10px 26px 34px;">
+      <div style="text-align:center; margin-top:24px;">
+        <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; color:#c98a4e; text-transform:uppercase;">The Ascent</div>
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-style:italic; font-size:27px; margin:10px 0 0; color:#f5edde;">{{ statusText }}</h2>
+      </div>
+
+      <!-- ridge -->
+      <div style="position:relative; margin-top:30px;">
+        <div style="position:absolute; left:50%; top:-6%; width:280px; height:200px; transform:translateX(-50%); background:radial-gradient(circle at 88% 18%, rgba(246,198,74,0.16), transparent 60%); pointer-events:none;"></div>
+        <svg viewBox="0 0 314 210" style="position:relative; width:100%; overflow:visible;">
+          <defs>
+            <linearGradient id="ridgeGrad" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#e8552d"></stop>
+              <stop offset="0.5" stop-color="#fb7a3c"></stop>
+              <stop offset="1" stop-color="#f6c64a"></stop>
+            </linearGradient>
+          </defs>
+          <path d="{{ ridgeFull }}" fill="none" stroke="rgba(180,150,110,0.22)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="1 6"></path>
+          <path d="{{ ridgeTrail }}" fill="none" stroke="url(#ridgeGrad)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 6px rgba(251,122,60,0.5));"></path>
+          <line x1="300" y1="40" x2="300" y2="20" stroke="#cbb994" stroke-width="1.6"></line>
+          <polygon points="300,20 314,25 300,30" fill="#f6c64a" style="transform-origin:300px 25px; animation:cumbreFlag 2.2s ease-in-out infinite;"></polygon>
+          <circle cx="{{ climberX }}" cy="{{ climberY }}" r="13" fill="rgba(251,122,60,0.22)"></circle>
+          <circle cx="{{ climberX }}" cy="{{ climberY }}" r="6.5" fill="#f6c64a" style="filter:drop-shadow(0 0 5px rgba(246,198,74,0.9));"></circle>
+          <circle cx="{{ climberX }}" cy="{{ climberY }}" r="2.6" fill="#1a0f05"></circle>
+        </svg>
+      </div>
+
+      <!-- progress -->
+      <div style="text-align:center; margin-top:6px;">
+        <span style="font-family:'Newsreader',serif; font-size:58px; font-weight:500; color:#f7efe2; letter-spacing:-1px;">{{ progressPct }}</span><span style="font-family:'Newsreader',serif; font-size:24px; color:#c98a4e;">%</span>
+      </div>
+      <div style="height:4px; border-radius:99px; background:rgba(255,255,255,0.06); margin:6px 8px 0; overflow:hidden;">
+        <div style="{{ barFill }}"></div>
+      </div>
+
+      <!-- stages -->
+      <div style="margin-top:30px; display:flex; flex-direction:column; gap:14px;">
+        <sc-for list="{{ stages }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex; align-items:center; gap:13px;">
+            <div style="{{ st.dotStyle }}">{{ st.mark }}</div>
+            <span style="{{ st.labelStyle }}">{{ st.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex:1;"></div>
+      <p style="text-align:center; font-size:13px; color:#8c7f68; font-style:italic; font-family:'Newsreader',serif;">{{ encourage }}</p>
+    </div>
+    </sc-if>
+
+    <!-- ============ SCREEN 3 : REPORT ============ -->
+    <sc-if value="{{ isReport }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative; z-index:2; flex:1; overflow-y:auto; padding:8px 22px 40px;">
+
+      <!-- report header -->
+      <div>
+        <div style="font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:3px; color:#c98a4e; text-transform:uppercase; margin-top:10px;">Your Route Report</div>
+        <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:32px; margin:8px 0 0; color:#f7efe2; letter-spacing:-0.4px;">Higher Ground</h1>
+        <div style="display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:11px; font-family:'Space Mono',monospace; font-size:11px; color:#8c7f68;">
+          <span style="color:#e8dcc6; background:linear-gradient(135deg,rgba(232,85,45,.2),rgba(246,198,74,.18)); border:1px solid rgba(246,198,74,0.2); padding:3px 10px; border-radius:99px;">{{ genre }}</span>
+          <span style="display:flex; align-items:center;">F# minor</span>
+          <span style="display:flex; align-items:center;">122 BPM</span>
+          <span style="display:flex; align-items:center;">3:24</span>
+        </div>
+        <div style="font-family:'Space Mono',monospace; font-size:10.5px; color:#7f7259; margin-top:9px; letter-spacing:.5px;">Reviewed as · {{ reviewedTag }}</div>
+      </div>
+
+      <!-- summit gauge -->
+      <div style="position:relative; margin-top:22px; display:flex; flex-direction:column; align-items:center;">
+        <div style="position:absolute; top:8px; width:240px; height:140px; background:radial-gradient(60% 90% at 50% 100%, rgba(251,122,60,0.22), transparent 70%); pointer-events:none;"></div>
+        <div style="position:relative; width:100%; max-width:300px; display:flex; justify-content:center;">{{ gauge }}</div>
+        <div style="margin-top:-58px; text-align:center; position:relative;">
+          <div style="font-family:'Newsreader',serif; font-size:64px; line-height:1; font-weight:500; color:#f7efe2; letter-spacing:-2px;">78</div>
+          <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; margin-top:6px; color:#f6c64a; text-transform:uppercase;">Ascending</div>
+        </div>
+        <p style="text-align:center; font-size:13.5px; line-height:1.5; color:#a89a82; margin:16px 4px 0; font-family:'Newsreader',serif; font-style:italic;">Strong bones, real altitude. Three clean moves put you on the summit.</p>
+      </div>
+
+      <!-- market fit -->
+      <div style="margin-top:24px; border-radius:16px; padding:16px 18px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.12);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase;">Market fit · {{ genre }}</div>
+          <div style="font-family:'Space Mono',monospace; font-size:11px; color:#f6c64a;">4 pts to chart-ready</div>
+        </div>
+        <div style="position:relative; height:8px; border-radius:99px; background:rgba(255,255,255,0.06); margin:20px 0 10px;">
+          <div style="position:absolute; left:0; top:0; bottom:0; width:78%; border-radius:99px; background:linear-gradient(90deg,#e8552d,#fb7a3c);"></div>
+          <div style="position:absolute; left:71%; top:50%; width:10px; height:10px; border-radius:50%; background:#cbb994; transform:translate(-50%,-50%); border:2px solid #1a130b;"></div>
+          <div style="position:absolute; left:82%; top:-7px; bottom:-7px; width:2px; background:#f6c64a;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:10px; color:#8c7f68;">
+          <span style="color:#fb7a3c;">You 78</span>
+          <span>Genre avg 71</span>
+          <span style="color:#f6c64a;">Chart-ready 82</span>
+        </div>
+      </div>
+
+      <!-- readiness -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-top:11px;">
+        <div style="border-radius:13px; padding:13px 12px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.22);">
+          <div style="font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px; color:#8c7f68; text-transform:uppercase;">Playlist</div>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:7px;"><span style="width:6px; height:6px; border-radius:50%; background:#f6c64a; box-shadow:0 0 7px #f6c64a;"></span><span style="font-size:13px; font-weight:600; color:#f6c64a;">Ready</span></div>
+        </div>
+        <div style="border-radius:13px; padding:13px 12px; background:rgba(255,255,255,0.022); border:1px solid rgba(216,154,74,0.22);">
+          <div style="font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px; color:#8c7f68; text-transform:uppercase;">Radio</div>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:7px;"><span style="width:6px; height:6px; border-radius:50%; background:#d99a4a;"></span><span style="font-size:13px; font-weight:600; color:#d99a4a;">Close</span></div>
+        </div>
+        <div style="border-radius:13px; padding:13px 12px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.22);">
+          <div style="font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px; color:#8c7f68; text-transform:uppercase;">Sync</div>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:7px;"><span style="width:6px; height:6px; border-radius:50%; background:#f6c64a; box-shadow:0 0 7px #f6c64a;"></span><span style="font-size:13px; font-weight:600; color:#f6c64a;">Ready</span></div>
+        </div>
+      </div>
+
+      <!-- climb profile -->
+      <div style="margin-top:30px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:21px; margin:0 0 4px; color:#f3ece0;">How the song climbs</h2>
+        <p style="font-size:12.5px; color:#8c7f68; margin:0 0 14px;">Energy across the track — your peak chorus and the flat spot to lift.</p>
+        <div style="border-radius:16px; padding:16px 14px 12px; background:linear-gradient(180deg,rgba(232,85,45,0.08),rgba(255,255,255,0.012)); border:1px solid rgba(246,198,74,0.12);">
+          <svg viewBox="0 0 320 96" style="width:100%; overflow:visible; display:block;">
+            <defs>
+              <linearGradient id="profFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(251,122,60,0.34)"></stop><stop offset="1" stop-color="rgba(251,122,60,0)"></stop></linearGradient>
+              <linearGradient id="profLine" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e8552d"></stop><stop offset="0.5" stop-color="#fb7a3c"></stop><stop offset="1" stop-color="#f6c64a"></stop></linearGradient>
+            </defs>
+            <path d="M14 64 L55.7 51.2 L97.4 41.6 L139.1 25.6 L180.8 48 L222.6 28.8 L264.3 44.8 L306 60.8 L306 90 L14 90 Z" fill="url(#profFill)"></path>
+            <path d="M14 64 L55.7 51.2 L97.4 41.6 L139.1 25.6 L180.8 48 L222.6 28.8 L264.3 44.8 L306 60.8" fill="none" stroke="url(#profLine)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+            <line x1="139.1" y1="25.6" x2="139.1" y2="9" stroke="#f6c64a" stroke-width="1.4"></line>
+            <polygon points="139.1,9 151,13 139.1,17" fill="#f6c64a"></polygon>
+            <circle cx="139.1" cy="25.6" r="3.5" fill="#f6c64a"></circle>
+            <circle cx="222.6" cy="28.8" r="6.5" fill="none" stroke="#d99a4a" stroke-width="1.5" stroke-dasharray="2.5 2.5"></circle>
+          </svg>
+          <div style="display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.5px; color:#7f7259; margin-top:8px; padding:0 4px;">
+            <span>INTRO</span><span>V1</span><span>PRE</span><span style="color:#f6c64a;">CH</span><span>V2</span><span style="color:#d99a4a;">CH</span><span>BR</span><span>OUT</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:18px; margin-top:11px; font-family:'Space Mono',monospace; font-size:10.5px;">
+          <span style="color:#f6c64a;">▲ Peak — Chorus 1</span>
+          <span style="color:#d99a4a;">○ Lift — Chorus 2</span>
+        </div>
+      </div>
+
+      <!-- highlight / best moment -->
+      <div style="margin-top:30px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:21px; margin:0 0 4px; color:#f3ece0;">Your highlight</h2>
+        <p style="font-size:12.5px; color:#8c7f68; margin:0 0 14px;">The 24 seconds most likely to hook a first-time listener — lead with this.</p>
+        <div style="border-radius:18px; padding:18px; background:linear-gradient(180deg,rgba(232,85,45,0.13),rgba(20,14,8,0.35)); border:1px solid rgba(246,198,74,0.18);">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#f6c64a; text-transform:uppercase;">Best moment</div>
+            <div style="font-family:'Space Mono',monospace; font-size:11px; color:#e8dcc6;">1:48 – 2:12 · 24s</div>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:2px; height:46px; margin-top:16px;">
+            <sc-for list="{{ highlightBars }}" as="b" hint-placeholder-count="48">
+              <div style="{{ b.style }}"></div>
+            </sc-for>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:9.5px; color:#7f7259; margin-top:7px;">
+            <span>0:00</span><span style="color:#f6c64a;">PEAK · 2nd CHORUS</span><span>3:24</span>
+          </div>
+          <button onClick="{{ playHighlight }}" style="all:unset; cursor:pointer; display:block; text-align:center; width:100%; box-sizing:border-box; margin-top:16px; padding:13px; border-radius:12px; font-size:14px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); box-shadow:0 8px 22px -10px rgba(251,122,60,0.6);">{{ highlightLabel }}</button>
+        </div>
+        <audio ref="{{ reportAudio }}" src="assets/dracula.mp3" preload="metadata" onTimeUpdate="{{ onHighlightTime }}" onEnded="{{ onHighlightEnd }}"></audio>
+      </div>
+
+      <!-- music / lyrics cards -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:24px;">
+        <div style="border-radius:16px; padding:16px; background:linear-gradient(165deg,rgba(251,122,60,0.1),rgba(255,255,255,0.015)); border:1px solid rgba(246,198,74,0.14);">
+          <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#9a8b71; text-transform:uppercase;">Music</div>
+          <div style="display:flex; align-items:baseline; gap:3px; margin-top:7px;"><span style="font-family:'Newsreader',serif; font-size:38px; font-weight:500; color:#f6c64a;">82</span><span style="font-size:14px; color:#7f7259;">/100</span></div>
+          <div style="font-size:11.5px; line-height:1.45; color:#9a8b71; margin-top:6px;">Hooks and production carry it.</div>
+        </div>
+        <div style="border-radius:16px; padding:16px; background:linear-gradient(165deg,rgba(251,122,60,0.1),rgba(255,255,255,0.015)); border:1px solid rgba(246,198,74,0.14);">
+          <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#9a8b71; text-transform:uppercase;">Lyrics</div>
+          <div style="display:flex; align-items:baseline; gap:3px; margin-top:7px;"><span style="font-family:'Newsreader',serif; font-size:38px; font-weight:500; color:#fb7a3c;">74</span><span style="font-size:14px; color:#7f7259;">/100</span></div>
+          <div style="font-size:11.5px; line-height:1.45; color:#9a8b71; margin-top:6px;">Heartfelt — sharpen the imagery.</div>
+        </div>
+      </div>
+
+      <!-- what's working / keep -->
+      <div style="margin-top:30px; border-radius:18px; padding:20px; background:rgba(255,255,255,0.018); border:1px solid rgba(246,198,74,0.12);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:7px; height:7px; border-radius:50%; background:#f6c64a; box-shadow:0 0 9px #f6c64a;"></div>
+          <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:2.5px; color:#f6c64a; text-transform:uppercase;">What's working</div>
+        </div>
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:23px; margin:10px 0 2px; color:#f7efe2;">Keep these holds</h2>
+        <p style="font-size:12.5px; color:#a89a82; margin:0 0 14px;">They're carrying the climb — protect them in the next version.</p>
+        <div style="display:flex; flex-direction:column; gap:13px;">
+          <div style="display:flex; gap:11px;"><span style="color:#f6c64a; font-size:10px; margin-top:3px;">▲</span><div><span style="font-size:14px; font-weight:600; color:#f3ece0;">The hook is sticky.</span><span style="font-size:13px; line-height:1.5; color:#a89a82;"> The chorus melody is instantly singable — your strongest hold on the wall.</span></div></div>
+          <div style="display:flex; gap:11px;"><span style="color:#f6c64a; font-size:10px; margin-top:3px;">▲</span><div><span style="font-size:14px; font-weight:600; color:#f3ece0;">Production sits pro.</span><span style="font-size:13px; line-height:1.5; color:#a89a82;"> Clean low end and a present vocal — this already reads radio-grade.</span></div></div>
+          <div style="display:flex; gap:11px;"><span style="color:#f6c64a; font-size:10px; margin-top:3px;">▲</span><div><span style="font-size:14px; font-weight:600; color:#f3ece0;">Real emotional pull.</span><span style="font-size:13px; line-height:1.5; color:#a89a82;"> Verse 1 lands honest and unforced — don't over-polish it.</span></div></div>
+        </div>
+      </div>
+
+      <!-- HERO: top 3 fixes -->
+      <div style="margin-top:30px; border-radius:22px; padding:22px 20px 8px; background:linear-gradient(180deg,rgba(232,85,45,0.16),rgba(20,14,8,0.4)); border:1px solid rgba(246,198,74,0.22); box-shadow:0 16px 40px -18px rgba(232,85,45,0.55);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:7px; height:7px; border-radius:50%; background:#f6c64a; box-shadow:0 0 10px #f6c64a;"></div>
+          <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:2.5px; color:#f6c64a; text-transform:uppercase;">The Route To The Top</div>
+        </div>
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:26px; margin:10px 0 2px; color:#f7efe2;">Top 3 fixes</h2>
+        <p style="font-size:12.5px; color:#a89a82; margin:0 0 18px;">Do these in order. Each one is a real step up the wall.</p>
+
+        <div style="position:relative;">
+        <div style="{{ fixesListStyle }}">
+          <div style="display:flex; gap:15px; padding:16px 0; border-top:1px solid rgba(246,198,74,0.12);">
+            <div style="font-family:'Newsreader',serif; font-size:30px; font-weight:500; line-height:1; background:linear-gradient(135deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; flex:none; width:26px;">1</div>
+            <div style="flex:1;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                <h3 style="font-size:16px; font-weight:600; margin:0; color:#f3ece0;">Lift the second chorus</h3>
+                <span style="flex:none; font-family:'Space Mono',monospace; font-size:10.5px; font-weight:700; color:#1a0f05; background:linear-gradient(135deg,#fb7a3c,#f6c64a); padding:3px 8px; border-radius:99px;">+6 Music</span>
+              </div>
+              <p style="font-size:13px; line-height:1.5; color:#a89a82; margin:6px 0 0;">The summit chorus lands at the same height as the first. Stack a harmony or octave vocal so the peak actually feels higher.</p>
+            </div>
+          </div>
+          <div style="display:flex; gap:15px; padding:16px 0; border-top:1px solid rgba(246,198,74,0.12);">
+            <div style="font-family:'Newsreader',serif; font-size:30px; font-weight:500; line-height:1; background:linear-gradient(135deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; flex:none; width:26px;">2</div>
+            <div style="flex:1;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                <h3 style="font-size:16px; font-weight:600; margin:0; color:#f3ece0;">Anchor verse 2's imagery</h3>
+                <span style="flex:none; font-family:'Space Mono',monospace; font-size:10.5px; font-weight:700; color:#1a0f05; background:linear-gradient(135deg,#fb7a3c,#f6c64a); padding:3px 8px; border-radius:99px;">+5 Lyrics</span>
+              </div>
+              <p style="font-size:13px; line-height:1.5; color:#a89a82; margin:6px 0 0;">Lines 3–4 drift abstract. Tie them to one concrete image and the story pulls climbers all the way in.</p>
+            </div>
+          </div>
+          <div style="display:flex; gap:15px; padding:16px 0; border-top:1px solid rgba(246,198,74,0.12);">
+            <div style="font-family:'Newsreader',serif; font-size:30px; font-weight:500; line-height:1; background:linear-gradient(135deg,#fb7a3c,#f6c64a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; flex:none; width:26px;">3</div>
+            <div style="flex:1;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                <h3 style="font-size:16px; font-weight:600; margin:0; color:#f3ece0;">Carve space in the low-mids</h3>
+                <span style="flex:none; font-family:'Space Mono',monospace; font-size:10.5px; font-weight:700; color:#1a0f05; background:linear-gradient(135deg,#fb7a3c,#f6c64a); padding:3px 8px; border-radius:99px;">+4 Mix</span>
+              </div>
+              <p style="font-size:13px; line-height:1.5; color:#a89a82; margin:6px 0 0;">200–400 Hz is crowded. Trim the rhythm guitar a couple dB so the vocal can breathe on the climb.</p>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ isLocked }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; inset:-6px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:11px; padding:26px 20px; background:radial-gradient(circle at 50% 38%, rgba(28,20,11,0.62), rgba(12,9,5,0.86)); backdrop-filter:blur(2px); border-radius:16px;">
+            <div style="width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e8552d,#f6c64a);">
+              <svg width="20" height="18" viewBox="0 0 17 15"><polygon points="8.5,1 16,14 1,14" fill="#1a0f05"></polygon></svg>
+            </div>
+            <div style="font-family:'Newsreader',serif; font-size:21px; color:#f7efe2;">Unlock your full route</div>
+            <div style="font-size:12.5px; line-height:1.5; color:#b6a78c; max-width:262px;">The Top 3 fixes, every subscore and the feature grid — yours the moment you check out.</div>
+            <button onClick="{{ goCheckout }}" style="all:unset; cursor:pointer; margin-top:2px; padding:13px 26px; border-radius:13px; font-size:14.5px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); box-shadow:0 10px 26px -10px rgba(251,122,60,0.7);">Unlock the route →</button>
+            <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:1px; color:#8c7f68;">FROM $9 · ONE-TIME OR SUBSCRIPTION</div>
+          </div>
+        </sc-if>
+        </div>
+      </div>
+
+      <sc-if value="{{ isUnlocked }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex; align-items:center; gap:9px; margin-top:24px; padding:11px 14px; border-radius:12px; background:linear-gradient(135deg,rgba(232,85,45,0.14),rgba(246,198,74,0.1)); border:1px solid rgba(246,198,74,0.2);">
+        <svg width="15" height="13" viewBox="0 0 17 15"><polygon points="8.5,1 16,14 1,14" fill="#f6c64a"></polygon></svg>
+        <span style="font-size:12.5px; color:#e8dcc6;">Summit Pass active — your full route is unlocked.</span>
+      </div>
+
+      <!-- subscores -->
+      <div style="margin-top:30px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:21px; margin:0 0 4px; color:#f3ece0;">The full pitch</h2>
+        <p style="font-size:12.5px; color:#8c7f68; margin:0 0 18px;">Every hold, scored.</p>
+
+        <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase; margin-bottom:13px;">Music</div>
+        <div style="display:flex; flex-direction:column; gap:13px;">
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Hook strength</span><span style="font-family:'Space Mono',monospace; color:#f6c64a;">84</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:84%; border-radius:99px; background:linear-gradient(90deg,#e8552d,#f6c64a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Production</span><span style="font-family:'Space Mono',monospace; color:#f6c64a;">86</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:86%; border-radius:99px; background:linear-gradient(90deg,#e8552d,#f6c64a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Melody</span><span style="font-family:'Space Mono',monospace; color:#f6c64a;">80</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:80%; border-radius:99px; background:linear-gradient(90deg,#e8552d,#f6c64a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Groove</span><span style="font-family:'Space Mono',monospace; color:#f6c64a;">82</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:82%; border-radius:99px; background:linear-gradient(90deg,#e8552d,#f6c64a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Mix balance</span><span style="font-family:'Space Mono',monospace; color:#cabfa8;">76</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:76%; border-radius:99px; background:linear-gradient(90deg,#a8642f,#d99a4a);"></div></div></div>
+        </div>
+
+        <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase; margin:24px 0 13px;">Lyrics</div>
+        <div style="display:flex; flex-direction:column; gap:13px;">
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Rhyme craft</span><span style="font-family:'Space Mono',monospace; color:#f6c64a;">79</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:79%; border-radius:99px; background:linear-gradient(90deg,#e8552d,#f6c64a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Imagery</span><span style="font-family:'Space Mono',monospace; color:#cabfa8;">76</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:76%; border-radius:99px; background:linear-gradient(90deg,#a8642f,#d99a4a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Emotional pull</span><span style="font-family:'Space Mono',monospace; color:#cabfa8;">75</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:75%; border-radius:99px; background:linear-gradient(90deg,#a8642f,#d99a4a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Memorability</span><span style="font-family:'Space Mono',monospace; color:#cabfa8;">73</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:73%; border-radius:99px; background:linear-gradient(90deg,#a8642f,#d99a4a);"></div></div></div>
+          <div><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span style="color:#cabfa8;">Story</span><span style="font-family:'Space Mono',monospace; color:#cabfa8;">70</span></div><div style="height:5px; border-radius:99px; background:rgba(255,255,255,0.05);"><div style="height:100%; width:70%; border-radius:99px; background:linear-gradient(90deg,#a8642f,#d99a4a);"></div></div></div>
+        </div>
+      </div>
+
+      <!-- mix & master -->
+      <div style="margin-top:30px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:21px; margin:0 0 4px; color:#f3ece0;">Mix &amp; master</h2>
+        <p style="font-size:12.5px; color:#8c7f68; margin:0 0 16px;">Measured against streaming targets.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="border-radius:13px; padding:14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+            <div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Integrated loudness</div>
+            <div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">−7.2 <span style="font-size:12px; color:#8c7f68;">LUFS</span></div>
+            <div style="font-size:11px; color:#d99a4a; margin-top:3px;">Hot vs −14 target</div>
+          </div>
+          <div style="border-radius:13px; padding:14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+            <div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Dynamic range</div>
+            <div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">DR 8</div>
+            <div style="font-size:11px; color:#d99a4a; margin-top:3px;">A touch squashed</div>
+          </div>
+          <div style="border-radius:13px; padding:14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+            <div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">True peak</div>
+            <div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">−0.8 <span style="font-size:12px; color:#8c7f68;">dBTP</span></div>
+            <div style="font-size:11px; color:#f6c64a; margin-top:3px;">Safe headroom</div>
+          </div>
+          <div style="border-radius:13px; padding:14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+            <div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Stereo width</div>
+            <div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">78<span style="font-size:12px; color:#8c7f68;">%</span></div>
+            <div style="font-size:11px; color:#f6c64a; margin-top:3px;">Wide, balanced</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; line-height:1.5; color:#9a8b71;">Your master is ~7 dB louder than Spotify's −14 LUFS target, so it'll be turned down on playback. Pull the limiter back for more punch and breathing room.</div>
+      </div>
+
+      <!-- climbs alongside -->
+      <div style="margin-top:30px;">
+        <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:21px; margin:0 0 4px; color:#f3ece0;">Climbs alongside</h2>
+        <p style="font-size:12.5px; color:#8c7f68; margin:0 0 14px;">Tracks taking a similar route in your genre.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:9px;">
+          <span style="padding:8px 13px; border-radius:999px; font-size:13px; color:#e8dcc6; background:rgba(255,255,255,0.025); border:1px solid rgba(246,198,74,0.16);">Novo Amor</span>
+          <span style="padding:8px 13px; border-radius:999px; font-size:13px; color:#e8dcc6; background:rgba(255,255,255,0.025); border:1px solid rgba(246,198,74,0.16);">Local Natives</span>
+          <span style="padding:8px 13px; border-radius:999px; font-size:13px; color:#e8dcc6; background:rgba(255,255,255,0.025); border:1px solid rgba(246,198,74,0.16);">Lord Huron</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;">
+          <div style="border-radius:13px; padding:14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+            <div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Best-fit playlists</div>
+            <div style="font-size:12.5px; line-height:1.7; color:#cabfa8; margin-top:6px;">Indie Chill · Atmospheric Mornings · Late-Night Drives</div>
+          </div>
+          <div style="border-radius:13px; padding:14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+            <div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Core audience</div>
+            <div style="font-size:12.5px; line-height:1.7; color:#cabfa8; margin-top:6px;">25–34 · US · UK · AU</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- extracted features -->
+      <div style="margin-top:30px;">
+        <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase; margin-bottom:14px;">Extracted Features</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Key</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">F# minor</div></div>
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Tempo</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">122 <span style="font-size:13px; color:#8c7f68;">BPM</span></div></div>
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Energy</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">0.71</div></div>
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Danceability</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">0.64</div></div>
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Loudness</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">−7.2 <span style="font-size:13px; color:#8c7f68;">dB</span></div></div>
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Valence</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">0.42</div></div>
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Time sig</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">4/4</div></div>
+          <div style="border-radius:13px; padding:13px 14px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);"><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#7f7259; text-transform:uppercase;">Duration</div><div style="font-family:'Newsreader',serif; font-size:21px; color:#f3ece0; margin-top:3px;">3:24</div></div>
+        </div>
+      </div>
+
+      <!-- footer cta -->
+      <div style="margin-top:30px; display:flex; flex-direction:column; gap:11px;">
+        <button onClick="{{ goProfile }}" style="all:unset; cursor:pointer; text-align:center; padding:16px; border-radius:15px; font-size:15px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); background-size:200% auto; box-shadow:0 10px 30px -10px rgba(251,122,60,0.6);">Save my results →</button>
+        <button onClick="{{ restart }}" style="all:unset; cursor:pointer; text-align:center; padding:15px; border-radius:15px; font-size:14px; font-weight:500; color:#cbb994; border:1px solid rgba(246,198,74,0.18);">Re-climb with these fixes</button>
+        <div style="display:flex; gap:11px;">
+          <button onClick="{{ exportPdf }}" style="all:unset; cursor:pointer; flex:1; text-align:center; padding:15px; border-radius:15px; font-size:14px; font-weight:500; color:#cbb994; border:1px solid rgba(246,198,74,0.18);">Export PDF</button>
+          <button style="all:unset; cursor:pointer; flex:1; text-align:center; padding:15px; border-radius:15px; font-size:14px; font-weight:500; color:#cbb994; border:1px solid rgba(246,198,74,0.18);">Share</button>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ============ SCREEN 4 : CHECKOUT ============ -->
+    <sc-if value="{{ isCheckout }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative; z-index:2; flex:1; overflow-y:auto; padding:10px 24px 40px;">
+      <div style="margin-top:12px;">
+        <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; color:#c98a4e; text-transform:uppercase;">Reach the summit</div>
+        <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; margin:8px 0 0; color:#f7efe2; letter-spacing:-0.4px;">Choose your pass</h1>
+        <p style="font-size:13.5px; line-height:1.55; color:#a89a82; margin:12px 0 0; max-width:340px;">Pick a pass to start climbing. Every pass unlocks the full route report — summit score, Top 3 fixes, subscores and feature grid — for your track.</p>
+      </div>
+
+      <!-- one-time -->
+      <div onClick="{{ selectSummit }}" style="{{ summitCardStyle }}">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div>
+            <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase;">One-time</div>
+            <div style="font-family:'Newsreader',serif; font-size:23px; color:#f7efe2; margin-top:4px;">Summit Pass</div>
+          </div>
+          <div style="text-align:right; flex:none;"><span style="font-family:'Newsreader',serif; font-size:34px; color:#f6c64a;">$9</span><div style="font-family:'Space Mono',monospace; font-size:10px; color:#8c7f68;">THIS SONG</div></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:9px; margin-top:15px;">
+          <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:#cabfa8;"><span style="color:#f6c64a; font-size:9px;">▲</span>Full report — all 3 fixes &amp; subscores</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:#cabfa8;"><span style="color:#f6c64a; font-size:9px;">▲</span>One re-climb recheck after your edits</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:#cabfa8;"><span style="color:#f6c64a; font-size:9px;">▲</span>Shareable summit card</div>
+        </div>
+      </div>
+
+      <!-- subscription -->
+      <div onClick="{{ selectSeason }}" style="{{ seasonCardStyle }}">
+        <div style="position:absolute; top:-10px; right:16px; font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:#1a0f05; background:linear-gradient(135deg,#fb7a3c,#f6c64a); padding:4px 10px; border-radius:99px; text-transform:uppercase;">Most popular</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div>
+            <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase;">Subscription</div>
+            <div style="font-family:'Newsreader',serif; font-size:23px; color:#f7efe2; margin-top:4px;">Season Pass</div>
+          </div>
+          <div style="text-align:right; flex:none;"><span style="font-family:'Newsreader',serif; font-size:34px; color:#f6c64a;">$19</span><div style="font-family:'Space Mono',monospace; font-size:10px; color:#8c7f68;">PER MONTH</div></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:9px; margin-top:15px;">
+          <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:#cabfa8;"><span style="color:#f6c64a; font-size:9px;">▲</span>Unlimited songs &amp; full reports</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:#cabfa8;"><span style="color:#f6c64a; font-size:9px;">▲</span>Unlimited re-climbs &amp; progress tracking</div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:#cabfa8;"><span style="color:#f6c64a; font-size:9px;">▲</span>Priority analysis · cancel anytime</div>
+        </div>
+      </div>
+
+      <a href="{{ payHref }}" target="_blank" rel="noopener noreferrer" onClick="{{ onPayClick }}" style="{{ payBtnStyle }}">{{ payLabel }}</a>
+
+      <sc-if value="{{ needsLink }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:12px; padding:12px 14px; border-radius:12px; border:1px solid rgba(246,198,74,0.2); background:rgba(251,122,60,0.08); font-size:12px; line-height:1.5; color:#cabfa8;">To take live payments, create a Stripe Payment Link for each plan, then paste the URLs into <span style="color:#f6c64a;">Payment (Stripe)</span> in the Tweaks panel. Set each link's success URL to return here with <span style="font-family:'Space Mono',monospace;">?paid=1</span>.</div>
+      </sc-if>
+
+      <div style="text-align:center; font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.5px; color:#6f6450; margin-top:16px;">Secure checkout powered by Stripe</div>
+
+      <div style="display:flex; flex-direction:column; gap:2px; margin-top:18px;">
+        <button onClick="{{ confirmPaid }}" style="all:unset; cursor:pointer; text-align:center; padding:14px; border-radius:13px; font-size:13.5px; font-weight:500; color:#cbb994; border:1px solid rgba(246,198,74,0.18);">I've completed payment — start climbing</button>
+        <button onClick="{{ goSample }}" style="all:unset; cursor:pointer; text-align:center; padding:12px; font-size:13px; color:#8c7f68;">Back</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ SCREEN 5 : PROFILE ============ -->
+    <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative; z-index:2; flex:1; overflow-y:auto; padding:12px 26px 36px;">
+
+      <sc-if value="{{ profileUnsaved }}" hint-placeholder-val="{{ true }}">
+        <div style="font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; color:#c98a4e; text-transform:uppercase; margin-top:12px;">Your summit log</div>
+        <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:31px; margin:8px 0 0; color:#f7efe2; letter-spacing:-0.4px;">Keep every climb.</h1>
+        <p style="font-size:13.5px; line-height:1.55; color:#a89a82; margin:12px 0 0; max-width:340px;">Build your profile to track scores, fixes and progress across every track you climb — your aggregated route to the top.</p>
+
+        <button onClick="{{ googleSignIn }}" style="all:unset; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:11px; margin-top:24px; padding:15px; border-radius:14px; font-size:15px; font-weight:600; color:#1a140c; background:#f3ece0;">
+          <span style="width:22px; height:22px; border-radius:50%; background:#1a140c; color:#f3ece0; display:flex; align-items:center; justify-content:center; font-family:'Newsreader',serif; font-size:14px; font-weight:600;">G</span>
+          Continue with Google
+        </button>
+        <div style="text-align:center; font-size:11px; color:#7a6e57; margin-top:9px; line-height:1.4;">Imports your name, email &amp; library so your log fills in automatically.</div>
+
+        <div style="display:flex; align-items:center; gap:12px; margin:22px 0;">
+          <div style="flex:1; height:1px; background:rgba(246,198,74,0.14);"></div>
+          <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:1.5px; color:#6f6450; text-transform:uppercase;">or sign up manually</div>
+          <div style="flex:1; height:1px; background:rgba(246,198,74,0.14);"></div>
+        </div>
+
+        <form onSubmit="{{ submitProfile }}" style="display:flex; flex-direction:column; gap:11px;">
+          <input ref="{{ nameRef }}" type="text" placeholder="Name or artist" style="padding:14px 15px; border-radius:13px; font-size:14.5px; color:#f3ece0; background:rgba(255,255,255,0.03); border:1px solid rgba(246,198,74,0.16);" />
+          <input ref="{{ emailRef }}" type="email" placeholder="Email" style="padding:14px 15px; border-radius:13px; font-size:14.5px; color:#f3ece0; background:rgba(255,255,255,0.03); border:1px solid rgba(246,198,74,0.16);" />
+          <input type="password" placeholder="Create a password" style="padding:14px 15px; border-radius:13px; font-size:14.5px; color:#f3ece0; background:rgba(255,255,255,0.03); border:1px solid rgba(246,198,74,0.16);" />
+          <button type="submit" style="all:unset; cursor:pointer; text-align:center; margin-top:6px; padding:16px; border-radius:14px; font-size:15.5px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); box-shadow:0 12px 32px -10px rgba(251,122,60,0.6);">Create my profile</button>
+        </form>
+
+        <div style="margin-top:18px; display:flex; align-items:flex-start; gap:11px; padding:13px 15px; border-radius:13px; background:rgba(255,255,255,0.022); border:1px solid rgba(246,198,74,0.1);">
+          <svg width="15" height="13" viewBox="0 0 17 15" style="margin-top:2px; flex:none;"><polygon points="8.5,1 16,14 1,14" fill="#f6c64a"></polygon></svg>
+          <div style="font-size:12px; line-height:1.5; color:#ab9c84;">We keep your scores, fixes and notes to build your log. <span style="color:#e8dcc6;">Your audio files are never stored.</span></div>
+        </div>
+        <button onClick="{{ backToReport }}" style="all:unset; cursor:pointer; display:block; width:100%; text-align:center; padding:14px; font-size:13px; color:#8c7f68; margin-top:6px;">Maybe later</button>
+      </sc-if>
+
+      <sc-if value="{{ profileSaved }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; padding-top:40px;">
+          <div style="width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e8552d,#f6c64a); box-shadow:0 12px 34px -10px rgba(251,122,60,0.7);">
+            <svg width="26" height="23" viewBox="0 0 17 15"><polygon points="8.5,1 16,14 1,14" fill="#1a0f05"></polygon></svg>
+          </div>
+          <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; margin:22px 0 0; color:#f7efe2;">You're on the board, {{ profileName }}.</h1>
+          <p style="font-size:13.5px; line-height:1.55; color:#a89a82; margin:12px 0 0; max-width:320px;">Your climbs are saved. Every track you score from here builds your summit log.</p>
+        </div>
+
+        <div style="margin-top:28px; border-radius:18px; padding:18px; background:linear-gradient(165deg,rgba(251,122,60,0.1),rgba(255,255,255,0.015)); border:1px solid rgba(246,198,74,0.16);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; color:#c98a4e; text-transform:uppercase;">Your log</div>
+            <div style="font-family:'Space Mono',monospace; font-size:10px; color:#8c7f68;">1 climb</div>
+          </div>
+          <div style="display:flex; gap:22px; margin-top:14px;">
+            <div><div style="font-family:'Newsreader',serif; font-size:34px; color:#f6c64a; line-height:1;">78</div><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1px; color:#8c7f68; text-transform:uppercase; margin-top:4px;">Avg summit</div></div>
+            <div><div style="font-family:'Newsreader',serif; font-size:34px; color:#f7efe2; line-height:1;">78</div><div style="font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:1px; color:#8c7f68; text-transform:uppercase; margin-top:4px;">Best climb</div></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:14px; border-top:1px solid rgba(246,198,74,0.12);">
+            <span style="font-size:13.5px; color:#e8dcc6; font-family:'Newsreader',serif;">Higher Ground</span>
+            <span style="font-family:'Space Mono',monospace; font-size:12px; color:#f6c64a;">78 · Ascending</span>
+          </div>
+        </div>
+
+        <div style="margin-top:22px; display:flex; flex-direction:column; gap:11px;">
+          <button onClick="{{ restart }}" style="all:unset; cursor:pointer; text-align:center; padding:16px; border-radius:15px; font-size:15px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); box-shadow:0 10px 30px -10px rgba(251,122,60,0.6);">Climb another track →</button>
+          <button onClick="{{ backToReport }}" style="all:unset; cursor:pointer; text-align:center; padding:15px; border-radius:15px; font-size:14px; font-weight:500; color:#cbb994; border:1px solid rgba(246,198,74,0.18);">Back to report</button>
+        </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 440, &quot;height&quot;: 920 },
+  &quot;vividness&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;restrained&quot;,&quot;balanced&quot;,&quot;vivid&quot;], &quot;default&quot;: &quot;balanced&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Theme&quot; },
+  &quot;ascentSpeed&quot;: { &quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 1, &quot;min&quot;: 0.5, &quot;max&quot;: 2, &quot;step&quot;: 0.25, &quot;unit&quot;: &quot;x&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Behavior&quot; },
+  &quot;startScreen&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;sample&quot;,&quot;upload&quot;,&quot;analyzing&quot;,&quot;report&quot;,&quot;checkout&quot;,&quot;profile&quot;], &quot;default&quot;: &quot;sample&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Behavior&quot; },
+  &quot;startUnlocked&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot; },
+  &quot;oneTimeUrl&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Payment (Stripe)&quot; },
+  &quot;subscriptionUrl&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Payment (Stripe)&quot; }
+}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.state = { screen:'sample', genre:'Indie Pop', fileLoaded:false, progress:0, plan:'season', unlocked:false, needsLink:false, profileSaved:false, profileName:'', depth:'deep', lens:'ar', playing:null, highlightPlaying:false };
+    this.nameRef = React.createRef();
+    this.emailRef = React.createRef();
+    this.draculaAudio = React.createRef();
+    this.janiceAudio = React.createRef();
+    this.reportAudio = React.createRef();
+    this.HL_START = 108; this.HL_END = 132; this.SONG_LEN = 204;
+    this.genreList = ['Pop','Indie Pop','R&B / Soul','Hip-Hop','Electronic','Folk','Rock','Country'];
+    this.ridge = [[14,182],[60,156],[100,168],[146,116],[192,134],[240,78],[300,40]];
+    this.wave = Array.from({length:46},(_,i)=>{
+      const v = Math.abs(Math.sin(i*0.7)*0.6 + Math.sin(i*0.27)*0.4 + Math.sin(i*1.9)*0.18);
+      return 5 + Math.round(Math.min(v,1)*32);
+    });
+    this.stagesDef = [
+      { label:'Listening to the mix', th:0.12 },
+      { label:'Reading the lyrics', th:0.40 },
+      { label:'Charting the melody', th:0.66 },
+      { label:'Scoring the route', th:0.92 },
+    ];
+  }
+
+  componentDidMount(){
+    let unlocked = false;
+    try { if(localStorage.getItem('cumbre_unlocked') === '1') unlocked = true; } catch(e){}
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const paid = q.get('paid');
+      if(paid === '1' || paid === 'true' || q.get('checkout') === 'success'){
+        unlocked = true;
+        try { localStorage.setItem('cumbre_unlocked','1'); } catch(e){}
+      }
+    } catch(e){}
+    let paidReturn = false;
+    try {
+      const q2 = new URLSearchParams(window.location.search);
+      const paid2 = q2.get('paid');
+      if(paid2 === '1' || paid2 === 'true' || q2.get('checkout') === 'success') paidReturn = true;
+    } catch(e){}
+    if(this.props.startUnlocked) unlocked = true;
+    if(unlocked) this.setState({ unlocked:true });
+
+    const s = this.props.startScreen;
+    if(s === 'analyzing'){ this.beginAscent(); }
+    else if(s && s !== 'sample'){ this.setState({ screen:s, fileLoaded: s === 'report' ? true : this.state.fileLoaded }); }
+    else if(paidReturn){ this.setState({ screen:'upload' }); }
+  }
+  componentWillUnmount(){ if(this._raf) cancelAnimationFrame(this._raf); }
+
+  glowMult(){
+    const v = this.props.vividness || 'balanced';
+    return v === 'restrained' ? 0.55 : v === 'vivid' ? 1.6 : 1;
+  }
+
+  toggleFile = () => this.setState(s => ({ fileLoaded: !s.fileLoaded }));
+  selectGenre = (g) => this.setState({ genre:g });
+  togglePlay = (id) => {
+    const refs = { dracula:this.draculaAudio, janice:this.janiceAudio };
+    Object.keys(refs).forEach(k => { if(k !== id && refs[k].current){ refs[k].current.pause(); } });
+    const a = refs[id] && refs[id].current;
+    if(!a) return;
+    if(a.paused){ a.play().catch(()=>{}); this.setState({ playing:id }); }
+    else { a.pause(); this.setState({ playing:null }); }
+  };
+  onAudioEnd = () => this.setState({ playing:null });
+  playHighlight = () => {
+    const a = this.reportAudio.current; if(!a) return;
+    if(!a.paused){ a.pause(); this.setState({ highlightPlaying:false }); return; }
+    const start = () => {
+      let s = this.HL_START, e = this.HL_END;
+      if(a.duration && isFinite(a.duration) && a.duration < this.HL_END){ s = Math.max(0, a.duration - 24); e = a.duration; }
+      this._hlEnd = e;
+      try { a.currentTime = s; } catch(err){}
+      a.play().catch(()=>{});
+      this.setState({ highlightPlaying:true });
+    };
+    if(a.readyState >= 1){ start(); }
+    else { a.addEventListener('loadedmetadata', start, { once:true }); a.load(); }
+  };
+  onHighlightTime = () => {
+    const a = this.reportAudio.current;
+    if(a && this._hlEnd && a.currentTime >= this._hlEnd){ a.pause(); try{ a.currentTime = 0; }catch(e){} this.setState({ highlightPlaying:false }); }
+  };
+  onHighlightEnd = () => this.setState({ highlightPlaying:false });
+  selectDepth = (d) => this.setState({ depth:d });
+  selectLens = (l) => this.setState({ lens:l });
+  exportPdf = () => { try { window.print(); } catch(e){} };
+  restart = () => { if(this._raf) cancelAnimationFrame(this._raf); this.setState({ screen:'upload', progress:0 }); };
+  goSample = () => this.setState({ screen:'sample' });
+  goCheckout = () => this.setState({ screen:'checkout', needsLink:false });
+  goPay = () => this.setState({ screen:'checkout', needsLink:false });
+  goUpload = () => this.setState({ screen:'upload' });
+  goProfile = () => this.setState({ screen:'profile' });
+  backToReport = () => this.setState({ screen:'report' });
+  selectPlan = (p) => this.setState({ plan:p, needsLink:false });
+  confirmPaid = () => { try { localStorage.setItem('cumbre_unlocked','1'); } catch(e){} this.setState({ unlocked:true, screen:'upload' }); };
+  googleSignIn = () => this.setState({ profileSaved:true, profileName:'Climber' });
+  submitProfile = (e) => { if(e && e.preventDefault) e.preventDefault(); const n = ((this.nameRef.current && this.nameRef.current.value) || '').trim(); this.setState({ profileSaved:true, profileName: n || 'Climber' }); };
+  back = () => {
+    const s = this.state.screen;
+    if(s === 'checkout' || s === 'upload') this.goSample();
+    else if(s === 'report') this.goUpload();
+    else if(s === 'profile') this.backToReport();
+    else this.goSample();
+  };
+
+  beginAscent = () => {
+    if(this._raf) cancelAnimationFrame(this._raf);
+    this.setState({ screen:'analyzing', progress:0, fileLoaded:true });
+    const speed = this.props.ascentSpeed || 1;
+    const dur = (this.state.depth === 'fast' ? 2600 : 4400) / speed;
+    const t0 = performance.now();
+    const tick = (now) => {
+      const p = Math.min((now - t0) / dur, 1);
+      const e = p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p+2,2)/2;
+      this.setState({ progress: e });
+      if(p < 1){ this._raf = requestAnimationFrame(tick); }
+      else { this._raf = null; setTimeout(() => this.setState({ screen:'report' }), 550); }
+    };
+    this._raf = requestAnimationFrame(tick);
+  };
+
+  ridgeData(t){
+    const pts = this.ridge;
+    const segs = []; let total = 0;
+    for(let i=1;i<pts.length;i++){
+      const l = Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]);
+      segs.push(l); total += l;
+    }
+    const target = Math.max(t,0.001) * total;
+    let acc = 0, cur = pts[0].slice();
+    const trail = [pts[0]];
+    for(let i=1;i<pts.length;i++){
+      if(acc + segs[i-1] >= target){
+        const k = (target - acc) / segs[i-1];
+        cur = [ pts[i-1][0] + (pts[i][0]-pts[i-1][0])*k, pts[i-1][1] + (pts[i][1]-pts[i-1][1])*k ];
+        trail.push(cur); break;
+      }
+      acc += segs[i-1]; trail.push(pts[i]);
+    }
+    const full = 'M' + pts.map(p=>p[0]+' '+p[1]).join(' L ');
+    const tr = 'M' + trail.map(p=>p[0]+' '+p[1]).join(' L ');
+    return { full, trail:tr, x:cur[0], y:cur[1] };
+  }
+
+  lerp(p){
+    const a=[232,85,45], b=[251,122,60], c=[246,198,74];
+    let r,g,bl;
+    if(p < 0.5){ const k=p/0.5; r=a[0]+(b[0]-a[0])*k; g=a[1]+(b[1]-a[1])*k; bl=a[2]+(b[2]-a[2])*k; }
+    else { const k=(p-0.5)/0.5; r=b[0]+(c[0]-b[0])*k; g=b[1]+(c[1]-b[1])*k; bl=b[2]+(c[2]-b[2])*k; }
+    return 'rgb('+(r|0)+','+(g|0)+','+(bl|0)+')';
+  }
+
+  gaugeEl(score, size){
+    if(score == null) score = 78;
+    const big = size !== 'sm';
+    const n = big ? 46 : 34, cx = 140, cy = 146, rO = big ? 122 : 120, rI = big ? 100 : 104;
+    const lines = [];
+    for(let i=0;i<n;i++){
+      const p = i/(n-1);
+      const t = Math.PI - p*Math.PI;
+      const ca = Math.cos(t), sa = Math.sin(t);
+      const on = p <= score/100;
+      const col = on ? this.lerp(p) : 'rgba(180,150,110,0.16)';
+      lines.push(React.createElement('line', {
+        key:i, x1:cx+rI*ca, y1:cy-rI*sa, x2:cx+rO*ca, y2:cy-rO*sa,
+        stroke:col, strokeWidth: on ? (big?4:3) : (big?2.6:2), strokeLinecap:'round',
+        style: on ? { filter:'drop-shadow(0 0 3px rgba(251,122,60,0.45))' } : null
+      }));
+    }
+    return React.createElement('svg', { viewBox:'0 0 280 156', width:'100%', style:{ maxWidth: big ? '300px' : '196px', overflow:'visible' } }, lines);
+  }
+
+  segStyle(sel){
+    const base = 'flex:1; text-align:center; cursor:pointer; padding:11px 8px; border-radius:11px; font-size:13px; transition:all .2s; border:1px solid transparent;';
+    return sel
+      ? base + 'background:linear-gradient(135deg,#e8552d,#fb7a3c); color:#160d05; font-weight:600; box-shadow:0 4px 14px -4px rgba(251,122,60,0.5);'
+      : base + 'background:rgba(255,255,255,0.025); color:#ab9c84; border-color:rgba(246,198,74,0.12);';
+  }
+  chipStyle(sel){
+    const base = 'padding:9px 14px; border-radius:999px; font-size:13px; cursor:pointer; transition:all .2s; font-family:inherit;';
+    return sel
+      ? base + 'border:1px solid transparent; background:linear-gradient(135deg,#e8552d,#fb7a3c); color:#160d05; font-weight:600; box-shadow:0 5px 18px -4px rgba(251,122,60,0.55);'
+      : base + 'border:1px solid rgba(246,198,74,0.14); background:rgba(255,255,255,0.02); color:#ab9c84; font-weight:500;';
+  }
+
+  renderVals(){
+    const { screen, genre, fileLoaded, progress, plan, unlocked, needsLink, profileSaved, profileName } = this.state;
+    const m = this.glowMult();
+
+    const oneUrl = (this.props.oneTimeUrl || '').trim();
+    const subUrl = (this.props.subscriptionUrl || '').trim();
+    const hasLink = plan === 'season' ? !!subUrl : !!oneUrl;
+    const payHref = (plan === 'season' ? subUrl : oneUrl) || '#';
+    const payLabel = plan === 'season' ? 'Continue — subscribe $19/mo' : 'Continue — pay $9 once';
+    const onPayClick = (e) => { if(!hasLink){ if(e && e.preventDefault) e.preventDefault(); this.setState({ needsLink:true }); } };
+
+    const cardBase = 'position:relative; cursor:pointer; border-radius:18px; padding:18px; transition:all .2s; background:rgba(255,255,255,0.02);';
+    const cardSel = 'border:1.5px solid transparent; box-shadow:inset 0 0 0 1.5px #f6c64a, 0 14px 32px -18px rgba(251,122,60,0.75); background:linear-gradient(165deg,rgba(251,122,60,0.13),rgba(255,255,255,0.02));';
+    const cardOff = 'border:1.5px solid rgba(246,198,74,0.16);';
+    const summitCardStyle = cardBase + (plan==='summit'?cardSel:cardOff) + 'margin-top:22px;';
+    const seasonCardStyle = cardBase + (plan==='season'?cardSel:cardOff) + 'margin-top:12px;';
+    const payBtnStyle = 'display:block; text-decoration:none; text-align:center; cursor:pointer; margin-top:22px; padding:17px; border-radius:15px; font-size:16px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); box-shadow:0 12px 32px -10px rgba(251,122,60,0.65);';
+    const fixesListStyle = 'display:flex; flex-direction:column;' + (unlocked ? '' : ' filter:blur(7px); opacity:.5; pointer-events:none; user-select:none;');
+
+    const heroGlow = 'position:absolute; left:0; right:0; top:0; height:340px; pointer-events:none; z-index:0; '
+      + 'background:radial-gradient(115% 70% at 50% -8%, rgba(251,122,60,'+(0.20*m)+'), rgba(232,85,45,'+(0.06*m)+') 40%, rgba(0,0,0,0) 72%);';
+
+    const genres = this.genreList.map(name => ({
+      name, selected: name===genre, style: this.chipStyle(name===genre), onSelect: () => this.selectGenre(name)
+    }));
+
+    const depth = this.state.depth, lens = this.state.lens;
+    const depths = [
+      { key:'fast', label:'Quick read', sub:'~30 sec' },
+      { key:'deep', label:'Deep climb', sub:'fuller notes' },
+    ].map(d => ({ label:d.label, sub:d.sub, style:this.segStyle(d.key===depth), onSelect:()=>this.selectDepth(d.key) }));
+    const lenses = [
+      { key:'listener', label:'Listener' },
+      { key:'producer', label:'Producer' },
+      { key:'ar', label:'A&R' },
+    ].map(l => ({ label:l.label, style:this.segStyle(l.key===lens), onSelect:()=>this.selectLens(l.key) }));
+    const lensName = lens==='ar' ? 'A&R' : lens==='producer' ? 'Producer' : 'Listener';
+    const reviewedTag = lensName + ' lens · ' + (depth==='fast' ? 'Quick read' : 'Deep climb');
+
+    const waveform = this.wave.map(h => ({
+      style: 'width:3px; flex:none; border-radius:2px; height:'+h+'px; background:linear-gradient(180deg,#f6c64a,#fb7a3c); opacity:'+(0.5+h/80).toFixed(2)+';'
+    }));
+
+    const rd = this.ridgeData(progress);
+    const pct = Math.round(progress*100);
+    let activeIdx = this.stagesDef.findIndex(s => progress < s.th);
+    if(activeIdx < 0) activeIdx = this.stagesDef.length;
+    const stages = this.stagesDef.map((s,i) => {
+      const st = i < activeIdx ? 'done' : (i === activeIdx ? 'active' : 'todo');
+      const dotBase = 'width:26px; height:26px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-family:Space Mono,monospace; transition:all .3s;';
+      const dotStyle = st==='done'
+        ? dotBase + 'background:linear-gradient(135deg,#e8552d,#f6c64a); color:#1a0f05;'
+        : st==='active'
+        ? dotBase + 'background:rgba(251,122,60,0.16); color:#f6c64a; border:1px solid rgba(246,198,74,0.5); animation:cumbreBreathe 1.4s ease-in-out infinite;'
+        : dotBase + 'background:rgba(255,255,255,0.03); color:#5f5544; border:1px solid rgba(255,255,255,0.06);';
+      const labelStyle = 'font-size:14px; transition:color .3s; color:'+(st==='todo' ? '#5f5544' : st==='active' ? '#f3ece0' : '#9a8b71')+'; font-weight:'+(st==='active'?'600':'400')+';';
+      return { label:s.label, dotStyle, labelStyle, mark: st==='done' ? '✓' : (st==='active' ? '↑' : '•') };
+    });
+
+    let statusText;
+    if(progress >= 1) statusText = 'Summit reached';
+    else if(progress >= 0.92) statusText = 'Planting the flag…';
+    else statusText = (this.stagesDef[activeIdx] ? this.stagesDef[activeIdx].label : 'Scoring the route') + '…';
+
+    const encourage = progress >= 0.92 ? 'One last push — the view is worth it.'
+      : progress >= 0.5 ? 'Strong pace. The ridge is just ahead.'
+      : 'Steady steps. Your guide has the route.';
+
+    const primaryStyle = fileLoaded
+      ? 'all:unset; cursor:pointer; text-align:center; padding:17px; border-radius:15px; font-size:16px; font-weight:600; color:#1a0f05; background:linear-gradient(135deg,#e8552d,#fb7a3c,#f6c64a); box-shadow:0 12px 32px -10px rgba(251,122,60,0.65);'
+      : 'all:unset; cursor:pointer; text-align:center; padding:17px; border-radius:15px; font-size:16px; font-weight:600; color:#cbb994; border:1px solid rgba(246,198,74,0.22); background:rgba(255,255,255,0.02);';
+
+    return {
+      isSample: screen==='sample', isUpload: screen==='upload', isAnalyzing: screen==='analyzing', isReport: screen==='report', isCheckout: screen==='checkout', isProfile: screen==='profile',
+      isLocked: screen==='report' && !unlocked, isUnlocked: unlocked,
+      goSample: this.goSample, goPay: this.goPay, goUpload: this.goUpload, goProfile: this.goProfile,
+      goCheckout: this.goCheckout, backToReport: this.backToReport, confirmPaid: this.confirmPaid, back: this.back,
+      googleSignIn: this.googleSignIn, submitProfile: this.submitProfile, nameRef: this.nameRef, emailRef: this.emailRef,
+      profileSaved, profileUnsaved: !profileSaved, profileName: profileName || 'Climber',
+      sampleDracula: this.gaugeEl(81, 'sm'), sampleJanice: this.gaugeEl(66, 'sm'),
+      draculaAudio: this.draculaAudio, janiceAudio: this.janiceAudio, onAudioEnd: this.onAudioEnd,
+      playDracula: () => this.togglePlay('dracula'), playJanice: () => this.togglePlay('janice'),
+      draculaLabel: this.state.playing==='dracula' ? '❚❚ Playing' : '▶ Preview',
+      janiceLabel: this.state.playing==='janice' ? '❚❚ Playing' : '▶ Preview',
+      depths, lenses, reviewedTag, exportPdf: this.exportPdf,
+      highlightBars: (() => {
+        const hs = this.HL_START / this.SONG_LEN, he = this.HL_END / this.SONG_LEN;
+        return Array.from({ length:56 }, (_, i) => {
+          const f = i / 55;
+          const inHL = f >= hs && f <= he;
+          const base = Math.abs(Math.sin(i*0.6)*0.6 + Math.sin(i*0.23)*0.4 + Math.sin(i*1.7)*0.2);
+          const h = 5 + Math.round(Math.min(base,1)*26) + (inHL ? 8 : 0);
+          return { style: 'flex:1; min-width:0; border-radius:2px; height:'+h+'px; background:'+(inHL ? 'linear-gradient(180deg,#f6c64a,#fb7a3c)' : 'rgba(180,150,110,0.20)')+';' };
+        });
+      })(),
+      reportAudio: this.reportAudio, onHighlightTime: this.onHighlightTime, onHighlightEnd: this.onHighlightEnd,
+      playHighlight: this.playHighlight,
+      highlightLabel: this.state.highlightPlaying ? '❚❚ Pause highlight' : '▶ Play highlight',
+      selectSummit: () => this.selectPlan('summit'), selectSeason: () => this.selectPlan('season'),
+      plan, needsLink, hasLink, payHref, payLabel, onPayClick,
+      summitCardStyle, seasonCardStyle, payBtnStyle, fixesListStyle,
+      showBack: screen!=='sample' && screen!=='analyzing',
+      topRight: screen==='sample' ? 'How it works' : screen==='upload' ? 'Step 1 of 3' : screen==='analyzing' ? 'Ascending' : screen==='checkout' ? 'Checkout' : screen==='profile' ? 'Your log' : (unlocked ? 'Unlocked' : 'Summit'),
+      heroGlow, genres, genre, waveform, fileLoaded, noFile: !fileLoaded,
+      toggleFile: this.toggleFile, restart: this.restart,
+      primaryAction: fileLoaded ? this.beginAscent : this.toggleFile,
+      primaryLabel: fileLoaded ? 'Begin ascent  →' : 'Add a track to begin',
+      primaryStyle,
+      ridgeFull: rd.full, ridgeTrail: rd.trail, climberX: rd.x, climberY: rd.y,
+      progressPct: pct, barFill: 'height:100%; width:'+pct+'%; border-radius:99px; background:linear-gradient(90deg,#e8552d,#f6c64a); transition:width .1s linear;',
+      stages, statusText, encourage,
+      gauge: this.gaugeEl()
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "cumbre-steps",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Step Functions Lambda handlers for the Cumbre analyze loop",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.658.1",
+    "@aws-sdk/s3-request-presigner": "^3.658.1",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.16.11",
+    "@types/pg": "^8.11.10",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,27 @@
+# Never include in the build context
+.env
+.env.*
+.env.local
+.env.production
+.env.development
+
+# Build artifacts (rebuilt inside Docker)
+node_modules
+.next
+out
+
+# Infra / CI / docs
+infra/
+.github/
+docs/
+
+# Dev tooling
+.cursor
+.vscode
+*.log
+*.tsbuildinfo
+
+# Git
+.git
+.gitignore
+.gitmodules

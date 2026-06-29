@@ -1,0 +1,21 @@
+# Cumbre worker — AWS-native (aws_entry.py).
+# modal is removed; the worker is now a plain Python Fargate task.
+
+# ── AWS SDK ────────────────────────────────────────────────────────────────────
+boto3>=1.35
+
+# ── ML / audio (mirror ml/requirements.txt) ────────────────────────────────────
+librosa>=0.10
+soundfile>=0.12
+pyloudnorm>=0.1.1
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+pandas>=2.0
+pronouncing>=0.2.0
+
+# ── Lyric transcription (OpenAI Whisper) ────────────────────────────────────────
+openai>=1.0
+
+# ── A&R / LLM layer (Claude Haiku 4.5, structured outputs) ──────────────────────
+anthropic>=0.40

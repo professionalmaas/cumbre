@@ -1,0 +1,80 @@
+name: Deploy
+
+on:
+  push:
+    branches: [PRD]
+  workflow_dispatch:
+
+jobs:
+  # ── Web app (Next.js) ───────────────────────────────────────────────────────
+  deploy-web:
+    uses: professionalmaas/home/.github/workflows/deploy-app.yml@PRD
+    with:
+      ecr_repository: certus-cumbre-prd
+      ecs_cluster:    certus-prd
+      ecs_service:    certus-cumbre-prd
+      app_dir:        web
+      environment:    prd
+      health_url:     https://cumbre.certuspest.com/api/health
+    secrets:
+      aws_role_arn: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+  # ── Worker image (Python Fargate — no service update, just ECR push) ────────
+  deploy-worker:
+    name: Build & push worker image
+    runs-on: ubuntu-latest
+    environment: prd
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        id: login-ecr
+
+      - name: Build and push worker image
+        env:
+          DOCKER_BUILDKIT: 1
+          WORKER_IMAGE: ${{ steps.login-ecr.outputs.registry }}/certus-cumbre-prd-worker
+        # Build context is repo root so the Dockerfile can copy both ml/ and worker/
+        run: |
+          docker build \
+            --cache-from "$WORKER_IMAGE:latest" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            -f worker/Dockerfile \
+            -t "$WORKER_IMAGE:${{ github.sha }}" \
+            -t "$WORKER_IMAGE:latest" \
+            .
+          docker push "$WORKER_IMAGE:${{ github.sha }}"
+          docker push "$WORKER_IMAGE:latest"
+
+  # ── Step Lambda bundles ─────────────────────────────────────────────────────
+  # TODO: Add a steps/build step (e.g. npm ci && npm run build in steps/)
+  # once the steps/ package.json and tsconfig are in place. The build should
+  # produce steps/dist/<name>/index.js for each Lambda. Below is the skeleton:
+  #
+  # build-steps:
+  #   name: Build step Lambda bundles
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with: { node-version: '20' }
+  #     - run: cd steps && npm ci && npm run build
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: step-bundles
+  #         path: steps/dist/
+  #
+  # Steps are NOT auto-deployed by Terraform on every push (terraform apply is
+  # separate). The lambda zip hash changes when steps/dist/ changes, triggering
+  # a plan diff. Run terraform apply after a step Lambda change.

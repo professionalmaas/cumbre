@@ -1,0 +1,923 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Cumbre — app-layer Terraform
+# team=certus  app=cumbre  env=prd  → prefix: certus-cumbre-prd
+# ═══════════════════════════════════════════════════════════════════════════════
+
+locals {
+  prefix     = "certus-cumbre-prd"
+  aws_region = var.aws_region
+
+  # Shortcut alias for shared state outputs
+  s = data.terraform_remote_state.shared.outputs
+}
+
+data "aws_caller_identity" "current" {}
+
+# ── Shared layer state ────────────────────────────────────────────────────────
+data "terraform_remote_state" "shared" {
+  backend = "s3"
+  config = {
+    bucket = var.shared_state_bucket
+    key    = var.shared_state_key
+    region = var.aws_region
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (a) Dedicated Cognito user pool — self-service signup, Lite tier
+# The shared pool is admin-invite-only + PLUS tier (per-MAU) — wrong for Cumbre.
+# See docs/AWS_ARCHITECTURE.md "Why a dedicated Cognito pool".
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_cognito_user_pool" "cumbre" {
+  name = "${local.prefix}-users"
+
+  # Self-service signup (artists register themselves)
+  admin_create_user_config {
+    allow_admin_create_user_only = false
+  }
+
+  auto_verified_attributes = ["email"]
+  username_attributes      = ["email"]
+
+  # Omit user_pool_tier entirely → Lite tier (no per-MAU PLUS billing)
+
+  password_policy {
+    minimum_length                   = 8
+    require_lowercase                = true
+    require_numbers                  = true
+    require_symbols                  = false
+    require_uppercase                = false
+    temporary_password_validity_days = 7
+  }
+
+  mfa_configuration = "OPTIONAL"
+  software_token_mfa_configuration {
+    enabled = true
+  }
+
+  email_configuration {
+    email_sending_account = "COGNITO_DEFAULT"
+  }
+
+  # Verification message
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+    email_subject        = "Your Cumbre verification code"
+    email_message        = "Your verification code is {####}"
+  }
+
+  schema {
+    name                = "email"
+    attribute_data_type = "String"
+    mutable             = true
+    required            = true
+    string_attribute_constraints {
+      min_length = 5
+      max_length = 254
+    }
+  }
+
+  tags = {
+    Name = "${local.prefix}-users"
+  }
+}
+
+resource "aws_cognito_user_pool_domain" "cumbre" {
+  domain       = var.cognito_domain_prefix
+  user_pool_id = aws_cognito_user_pool.cumbre.id
+}
+
+resource "aws_cognito_user_pool_client" "web" {
+  name         = "${local.prefix}-web"
+  user_pool_id = aws_cognito_user_pool.cumbre.id
+
+  generate_secret = true
+
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_flows                  = ["code"]
+  allowed_oauth_scopes                 = ["openid", "email"]
+
+  callback_urls = ["https://${var.host_header}/auth/callback"]
+  logout_urls   = ["https://${var.host_header}/login"]
+
+  # Authorization Code + PKCE
+  explicit_auth_flows = [
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_SRP_AUTH",
+  ]
+
+  supported_identity_providers = ["COGNITO"]
+
+  prevent_user_existence_errors = "ENABLED"
+
+  # Token hygiene
+  enable_token_revocation = true
+  refresh_token_rotation {
+    feature                    = "ENABLED"
+    retry_grace_period_seconds = 30
+  }
+
+  access_token_validity  = 1
+  id_token_validity      = 1
+  refresh_token_validity = 30
+  token_validity_units {
+    access_token  = "hours"
+    id_token      = "hours"
+    refresh_token = "days"
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (b) RDS Postgres — certus-cumbre-prd-db
+# ══════════════════════════════════════════════════════════════════════════════
+resource "random_password" "db" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "aws_db_subnet_group" "cumbre" {
+  name        = local.prefix
+  description = "Private subnets for certus-cumbre-prd RDS"
+  subnet_ids  = local.s.private_subnet_ids
+
+  tags = { Name = local.prefix }
+}
+
+resource "aws_security_group" "rds" {
+  name        = "${local.prefix}-rds"
+  description = "Allow Postgres from app ECS SG and steps Lambda SG"
+  vpc_id      = local.s.vpc_id
+
+  ingress {
+    description     = "Postgres from app ECS tasks"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_steps.id]
+  }
+
+  # Web → RDS ingress is added via aws_security_group_rule.rds_from_web below,
+  # using module.app.ecs_task_security_group_id (the module exports this output).
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${local.prefix}-rds-sg" }
+}
+
+resource "aws_db_instance" "cumbre" {
+  identifier        = "${local.prefix}-db"
+  engine            = "postgres"
+  engine_version    = "16"
+  instance_class    = "db.t4g.micro"
+  allocated_storage = 20
+  storage_type      = "gp3"
+
+  db_name  = "cumbre"
+  username = var.db_master_username
+  password = random_password.db.result
+
+  db_subnet_group_name   = aws_db_subnet_group.cumbre.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+
+  # Never publicly reachable
+  publicly_accessible = false
+
+  # Encrypt with shared KMS if available, else AWS-managed (default)
+  storage_encrypted = true
+  kms_key_id        = local.s.kms_secrets_key_arn != "" ? local.s.kms_secrets_key_arn : null
+
+  # Safety
+  deletion_protection     = true
+  skip_final_snapshot     = false
+  final_snapshot_identifier = "${local.prefix}-db-final"
+  backup_retention_period = 7
+  backup_window           = "03:00-04:00"
+  maintenance_window      = "Mon:04:00-Mon:05:00"
+
+  # No Multi-AZ in Phase 1 (cost vs HA trade-off — see AWS_ARCHITECTURE.md deferred list)
+  multi_az = false
+
+  # Performance Insights (free tier)
+  performance_insights_enabled = true
+
+  tags = { Name = "${local.prefix}-db" }
+}
+
+# ── Ingress rule: allow app web ECS SG → RDS ─────────────────────────────────
+# The module exports ecs_task_security_group_id — use it directly.
+resource "aws_security_group_rule" "rds_from_web" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds.id
+  source_security_group_id = module.app.ecs_task_security_group_id
+  description              = "Postgres from web ECS tasks"
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (c) S3 buckets
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_s3_bucket" "uploads" {
+  bucket        = "${local.prefix}-uploads-${data.aws_caller_identity.current.account_id}"
+  force_destroy = false
+
+  tags = { Name = "${local.prefix}-uploads", Purpose = "transient-audio" }
+}
+
+resource "aws_s3_bucket_public_access_block" "uploads" {
+  bucket                  = aws_s3_bucket.uploads.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = local.s.kms_secrets_key_arn != "" ? "aws:kms" : "AES256"
+      kms_master_key_id = local.s.kms_secrets_key_arn != "" ? local.s.kms_secrets_key_arn : null
+    }
+  }
+}
+
+# Audio is deleted after analysis — expire any objects left over after 1 day
+resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+  rule {
+    id     = "expire-audio"
+    status = "Enabled"
+    filter { prefix = "" }
+    expiration { days = 1 }
+  }
+}
+
+resource "aws_s3_bucket" "artifacts" {
+  bucket        = "${local.prefix}-artifacts-${data.aws_caller_identity.current.account_id}"
+  force_destroy = false
+
+  tags = { Name = "${local.prefix}-artifacts", Purpose = "ml-model" }
+}
+
+resource "aws_s3_bucket_public_access_block" "artifacts" {
+  bucket                  = aws_s3_bucket.artifacts.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "artifacts" {
+  bucket = aws_s3_bucket.artifacts.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = local.s.kms_secrets_key_arn != "" ? "aws:kms" : "AES256"
+      kms_master_key_id = local.s.kms_secrets_key_arn != "" ? local.s.kms_secrets_key_arn : null
+    }
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (d) Step Lambdas security group (shared by all step Lambdas)
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_security_group" "ecs_steps" {
+  name        = "${local.prefix}-steps"
+  description = "Shared SG for step Lambdas — egress to RDS and internet"
+  vpc_id      = local.s.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${local.prefix}-steps-sg" }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (e) Step Lambda IAM role (shared by all step Lambdas)
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_iam_role" "lambda_step" {
+  name = "${local.prefix}-lambda-step"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = { Name = "${local.prefix}-lambda-step" }
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_step_vpc" {
+  role       = aws_iam_role.lambda_step.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy" "lambda_step_permissions" {
+  name = "step-permissions"
+  role = aws_iam_role.lambda_step.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ReadAppSecret"
+        Effect = "Allow"
+        Action = ["secretsmanager:GetSecretValue"]
+        # The module creates the secret as "${local.prefix}/secrets"
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.prefix}/secrets*"
+      },
+      {
+        Sid    = "S3Uploads"
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.uploads.arn}/*"
+      },
+      {
+        Sid      = "S3UploadsList"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.uploads.arn
+      },
+      {
+        Sid    = "CloudWatchLogs"
+        Effect = "Allow"
+        Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.prefix}-*:*"
+      },
+    ]
+  })
+}
+
+# ── Step Lambda helper: local vars for all steps ──────────────────────────────
+locals {
+  step_names = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review"]
+
+  # Common env vars injected into every step Lambda
+  step_env = {
+    AWS_ACCOUNT_ID     = data.aws_caller_identity.current.account_id
+    S3_UPLOAD_BUCKET   = aws_s3_bucket.uploads.id
+    SECRET_ARN         = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.prefix}/secrets"
+    REGION             = var.aws_region
+  }
+}
+
+# ── Step Lambda log groups ────────────────────────────────────────────────────
+resource "aws_cloudwatch_log_group" "lambda_step" {
+  for_each          = toset(local.step_names)
+  name              = "/aws/lambda/${local.prefix}-${each.key}"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-${each.key}-logs" }
+}
+
+# ── Step Lambda source archives ───────────────────────────────────────────────
+# Each step is bundled by the CI step-build job into steps/dist/<name>/index.js
+# If the dist directory is absent at plan time, archive_file will error —
+# run `npm run build` in steps/ first, or use -target to apply other resources.
+data "archive_file" "lambda_step" {
+  for_each    = toset(local.step_names)
+  type        = "zip"
+  source_dir  = "${path.root}/../../steps/dist/${each.key}"
+  output_path = "${path.root}/../../steps/dist/${each.key}.zip"
+}
+
+# ── Step Lambda functions ─────────────────────────────────────────────────────
+resource "aws_lambda_function" "step" {
+  for_each = toset(local.step_names)
+
+  function_name = "${local.prefix}-${each.key}"
+  role          = aws_iam_role.lambda_step.arn
+  runtime       = "nodejs20.x"
+  handler       = "index.handler"
+  filename      = data.archive_file.lambda_step[each.key].output_path
+  source_code_hash = data.archive_file.lambda_step[each.key].output_base64sha256
+
+  timeout     = 60
+  memory_size = 512
+
+  vpc_config {
+    subnet_ids         = local.s.private_subnet_ids
+    security_group_ids = [aws_security_group.ecs_steps.id]
+  }
+
+  environment {
+    variables = local.step_env
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_step_vpc,
+    aws_cloudwatch_log_group.lambda_step,
+  ]
+
+  tags = { Name = "${local.prefix}-${each.key}" }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (f) Worker ECR + ECS task definition
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_ecr_repository" "worker" {
+  name                 = "${local.prefix}-worker"
+  image_tag_mutability = "MUTABLE"
+  image_scanning_configuration { scan_on_push = true }
+  tags = { Name = "${local.prefix}-worker" }
+}
+
+resource "aws_ecr_lifecycle_policy" "worker" {
+  repository = aws_ecr_repository.worker.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection    = { tagStatus = "any"; countType = "imageCountMoreThan"; countNumber = 10 }
+      action       = { type = "expire" }
+    }]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "worker" {
+  name              = "/ecs/${local.prefix}-worker"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-worker-logs" }
+}
+
+# Worker-specific Secrets Manager secret (Anthropic + OpenAI keys).
+# Kept separate from the web app secret so the worker execution role has least-privilege
+# access to only the keys it needs at task start.
+resource "aws_secretsmanager_secret" "worker" {
+  name       = "${local.prefix}-worker/secrets"
+  kms_key_id = local.s.kms_secrets_key_arn != "" ? local.s.kms_secrets_key_arn : null
+  tags       = { Name = "${local.prefix}-worker-secrets" }
+}
+
+resource "aws_secretsmanager_secret_version" "worker" {
+  secret_id = aws_secretsmanager_secret.worker.id
+  secret_string = jsonencode({
+    ANTHROPIC_API_KEY = var.anthropic_api_key
+    OPENAI_API_KEY    = var.openai_api_key
+  })
+  lifecycle { ignore_changes = [secret_string] }
+}
+
+resource "aws_iam_role" "worker_execution" {
+  name = "${local.prefix}-worker-execution"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{ Effect = "Allow"; Principal = { Service = "ecs-tasks.amazonaws.com" }; Action = "sts:AssumeRole" }]
+  })
+  tags = { Name = "${local.prefix}-worker-execution" }
+}
+
+resource "aws_iam_role_policy_attachment" "worker_execution_managed" {
+  role       = aws_iam_role.worker_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Allow the ECS execution role to pull the worker secret at task start.
+# The managed ECSTaskExecutionRolePolicy does NOT cover custom secrets — this
+# explicit grant is required for ECS to inject them via the `secrets` block.
+resource "aws_iam_role_policy" "worker_execution_secret" {
+  name = "read-worker-secret"
+  role = aws_iam_role.worker_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = concat(
+      [{
+        Sid      = "ReadWorkerSecret"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = aws_secretsmanager_secret.worker.arn
+      }],
+      # If a KMS CMK is in use, the execution role also needs kms:Decrypt
+      local.s.kms_secrets_key_arn != "" ? [{
+        Sid      = "DecryptWorkerSecret"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = local.s.kms_secrets_key_arn
+      }] : []
+    )
+  })
+}
+
+resource "aws_iam_role" "worker_task" {
+  name = "${local.prefix}-worker-task"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{ Effect = "Allow"; Principal = { Service = "ecs-tasks.amazonaws.com" }; Action = "sts:AssumeRole" }]
+  })
+  tags = { Name = "${local.prefix}-worker-task" }
+}
+
+resource "aws_iam_role_policy" "worker_task_permissions" {
+  name = "worker-permissions"
+  role = aws_iam_role.worker_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "S3Uploads"
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.uploads.arn}/*"
+      },
+      {
+        Sid    = "S3Artifacts"
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = "${aws_s3_bucket.artifacts.arn}/*"
+      },
+      {
+        Sid    = "ReadAppSecret"
+        Effect = "Allow"
+        Action = ["secretsmanager:GetSecretValue"]
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.prefix}/secrets*"
+      },
+      {
+        Sid    = "SFNTaskToken"
+        Effect = "Allow"
+        Action = ["states:SendTaskSuccess", "states:SendTaskFailure"]
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+resource "aws_ecs_task_definition" "worker" {
+  family                   = "${local.prefix}-worker"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 1024
+  memory                   = 4096
+  execution_role_arn       = aws_iam_role.worker_execution.arn
+  task_role_arn            = aws_iam_role.worker_task.arn
+  tags                     = { Name = "${local.prefix}-worker" }
+
+  container_definitions = jsonencode([{
+    name      = "worker"
+    image     = "${aws_ecr_repository.worker.repository_url}:latest"
+    essential = true
+
+    # Secrets injected by ECS execution role at task start (never baked into the image).
+    secrets = [
+      {
+        name      = "ANTHROPIC_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.worker.arn}:ANTHROPIC_API_KEY::"
+      },
+      {
+        name      = "OPENAI_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.worker.arn}:OPENAI_API_KEY::"
+      },
+    ]
+
+    environment = [
+      { name = "AWS_REGION";       value = var.aws_region },
+      { name = "S3_UPLOAD_BUCKET"; value = aws_s3_bucket.uploads.id },
+      { name = "CUMBRE_MODEL_S3";  value = aws_s3_bucket.artifacts.id },
+    ]
+
+    # The task token is passed by Step Functions as a container override at RunTask time.
+    # worker/aws_entry.py reads os.environ["TASK_TOKEN"].
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.worker.name
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "worker"
+      }
+    }
+
+    # Worker is long-running; give it time to finish before SIGKILL
+    stopTimeout = 120
+  }])
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (d) Step Functions state machine — certus-cumbre-prd-analyze
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_iam_role" "sfn" {
+  name = "${local.prefix}-sfn"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "states.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+      Condition = { StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.current.account_id } }
+    }]
+  })
+  tags = { Name = "${local.prefix}-sfn" }
+}
+
+resource "aws_iam_role_policy" "sfn_permissions" {
+  name = "sfn-permissions"
+  role = aws_iam_role.sfn.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "InvokeLambdaSteps"
+        Effect = "Allow"
+        Action = ["lambda:InvokeFunction"]
+        Resource = [for name in local.step_names :
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.prefix}-${name}"
+        ]
+      },
+      {
+        Sid    = "RunWorkerTask"
+        Effect = "Allow"
+        Action = ["ecs:RunTask", "ecs:StopTask", "ecs:DescribeTasks"]
+        Resource = "*"
+      },
+      {
+        Sid      = "PassWorkerRoles"
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
+        Resource = [aws_iam_role.worker_execution.arn, aws_iam_role.worker_task.arn]
+      },
+      {
+        # Required for ecs:runTask.waitForTaskToken — Step Functions manages an
+        # EventBridge rule named "StepFunctionsGetEventsForECSTaskRule" to track
+        # task completion and deliver the task token callback.
+        Sid    = "EventBridgeWaitForTaskToken"
+        Effect = "Allow"
+        Action = [
+          "events:PutTargets",
+          "events:PutRule",
+          "events:DescribeRule",
+        ]
+        Resource = "arn:aws:events:${var.aws_region}:${data.aws_caller_identity.current.account_id}:rule/StepFunctionsGetEventsForECSTaskRule"
+      },
+      {
+        Sid    = "CloudWatchLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogDelivery",
+          "logs:GetLogDelivery",
+          "logs:UpdateLogDelivery",
+          "logs:DeleteLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:PutResourcePolicy",
+          "logs:DescribeResourcePolicies",
+          "logs:DescribeLogGroups",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "XRay"
+        Effect = "Allow"
+        Action = ["xray:PutTraceSegments", "xray:PutTelemetryRecords", "xray:GetSamplingRules", "xray:GetSamplingTargets"]
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "sfn" {
+  name              = "/aws/states/${local.prefix}-analyze"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-sfn-logs" }
+}
+
+# Worker security group (egress-all; no ingress needed — Step Functions triggers it)
+resource "aws_security_group" "worker" {
+  name        = "${local.prefix}-worker"
+  description = "ECS worker task SG — egress to S3/Secrets/RDS"
+  vpc_id      = local.s.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${local.prefix}-worker-sg" }
+}
+
+# Allow worker → RDS
+resource "aws_security_group_rule" "rds_from_worker" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds.id
+  source_security_group_id = aws_security_group.worker.id
+  description              = "Postgres from worker ECS tasks"
+}
+
+resource "aws_sfn_state_machine" "analyze" {
+  name     = "${local.prefix}-analyze"
+  role_arn = aws_iam_role.sfn.arn
+  type     = "STANDARD"
+
+  # ASL definition — created by the team at infra/sfn/analyze.asl.json
+  # templatefile() injects the Lambda ARNs, worker cluster/taskdef/SG/subnet, and
+  # container name. The file MUST exist before `terraform apply`.
+  # If it is absent, Terraform will error with: "Invalid template file path".
+  definition = templatefile("${path.root}/../sfn/analyze.asl.json", {
+    validate_fn_arn    = aws_lambda_function.step["validate"].arn
+    moderate_fn_arn    = aws_lambda_function.step["moderate"].arn
+    fingerprint_fn_arn = aws_lambda_function.step["fingerprint"].arn
+    charge_fn_arn      = aws_lambda_function.step["charge"].arn
+    deliver_fn_arn     = aws_lambda_function.step["deliver"].arn
+    reject_fn_arn      = aws_lambda_function.step["reject"].arn
+    review_fn_arn      = aws_lambda_function.step["review"].arn
+
+    ecs_cluster_arn       = local.s.ecs_cluster_id
+    worker_task_def_arn   = aws_ecs_task_definition.worker.arn
+    worker_container_name = "worker"
+
+    # JSON-encoded arrays so the ASL templatefile can embed them as inline JSON values.
+    # The updated ASL uses ${worker_subnets_json} and ${worker_sgs_json}.
+    worker_subnets_json = jsonencode(local.s.private_subnet_ids)
+    worker_sgs_json     = jsonencode([aws_security_group.worker.id])
+
+    # Numeric threshold passed to the ConfidenceChoice NumericLessThan condition
+    low_confidence_threshold = tonumber(var.low_confidence_threshold)
+  })
+
+  logging_configuration {
+    log_destination        = "${aws_cloudwatch_log_group.sfn.arn}:*"
+    include_execution_data = false
+    level                  = "ERROR"
+  }
+
+  tracing_configuration {
+    enabled = true
+  }
+
+  tags = { Name = "${local.prefix}-analyze" }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Base app module — ECS web service, ECR, ALB rule, Secrets Manager, IAM,
+# CloudWatch alarms, dashboard, budget hard-stop
+# ══════════════════════════════════════════════════════════════════════════════
+module "app" {
+  source = "git::https://github.com/professionalmaas/home//infra/terraform/modules/app?ref=PRD"
+
+  team        = "certus"
+  app_name    = "cumbre"
+  environment = var.environment
+  aws_region  = var.aws_region
+  host_header = var.host_header
+
+  # ── Auth: disabled — Cumbre is public; auth is in-app Cognito OIDC ──────────
+  enable_auth = false
+
+  # ── Container ────────────────────────────────────────────────────────────────
+  container_port   = 3000
+  container_cpu    = 512
+  container_memory = 1024
+  health_check_path = "/api/health"
+
+  # ── Scaling ──────────────────────────────────────────────────────────────────
+  enable_schedule_scaling = true
+  min_tasks               = 1
+  max_tasks               = 4
+
+  # ── CI/CD ────────────────────────────────────────────────────────────────────
+  github_repo        = var.github_repo
+  github_environment = var.github_environment
+
+  # ── Budget ───────────────────────────────────────────────────────────────────
+  admin_email        = var.admin_email
+  monthly_budget_usd = var.monthly_budget_usd
+
+  # ── Route53 (optional — set zone_id in tfvars to get an A record) ────────────
+  route53_zone_id = var.route53_zone_id
+  alb_dns_name    = local.s.alb_dns_name
+
+  # ── Shared infra wired from remote state ─────────────────────────────────────
+  vpc_id                   = local.s.vpc_id
+  public_subnet_ids        = local.s.public_subnet_ids
+  private_subnet_ids       = local.s.private_subnet_ids
+  alb_sg_id                = local.s.alb_sg_id
+  alb_arn                  = local.s.alb_arn
+  alb_arn_suffix           = local.s.alb_arn_suffix
+  alb_listener_https_arn   = local.s.alb_listener_https_arn
+  ecs_cluster_id           = local.s.ecs_cluster_id
+  ecs_cluster_name         = local.s.ecs_cluster_name
+  cognito_user_pool_id     = local.s.cognito_user_pool_id     # shared pool (unused by Cumbre; still required input)
+  cognito_user_pool_arn    = local.s.cognito_user_pool_arn
+  cognito_domain           = local.s.cognito_domain
+  sns_alerts_arn           = local.s.sns_alerts_arn
+  github_oidc_provider_arn = local.s.github_oidc_provider_arn
+  aws_account_id           = local.s.aws_account_id
+  kms_logs_key_arn         = local.s.kms_logs_key_arn
+  kms_secrets_key_arn      = local.s.kms_secrets_key_arn
+
+  # ── Secrets (Secrets Manager; never in image) ─────────────────────────────────
+  app_secrets = {
+    DATABASE_URL           = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_instance.cumbre.endpoint}/cumbre"
+    COGNITO_CLIENT_SECRET  = aws_cognito_user_pool_client.web.client_secret
+    SESSION_SECRET         = var.session_secret
+    STRIPE_SECRET_KEY      = var.stripe_secret_key
+    STRIPE_WEBHOOK_SECRET  = var.stripe_webhook_secret
+    STRIPE_PRICE_SUMMIT = var.stripe_price_summit
+    STRIPE_PRICE_SEASON = var.stripe_price_season
+    OPENAI_API_KEY         = var.openai_api_key
+    ACRCLOUD_HOST          = var.acrcloud_host
+    ACRCLOUD_ACCESS_KEY    = var.acrcloud_access_key
+    ACRCLOUD_ACCESS_SECRET = var.acrcloud_access_secret
+  }
+
+  # ── Non-secret env vars ───────────────────────────────────────────────────────
+  app_env_vars = {
+    NEXT_PUBLIC_APP_URL        = "https://${var.host_header}"
+    COGNITO_USER_POOL_ID       = aws_cognito_user_pool.cumbre.id
+    COGNITO_CLIENT_ID          = aws_cognito_user_pool_client.web.id
+    COGNITO_DOMAIN             = var.cognito_domain_prefix
+    COGNITO_ISSUER             = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.cumbre.id}"
+    S3_UPLOAD_BUCKET           = aws_s3_bucket.uploads.id
+    ANALYZE_STATE_MACHINE_ARN  = aws_sfn_state_machine.analyze.arn
+    ADMIN_EMAILS               = var.admin_emails
+    KILL_SWITCH_SCORING        = var.kill_switch_scoring
+    LOW_CONFIDENCE_THRESHOLD   = var.low_confidence_threshold
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (g) Extend the web task role with app-specific permissions
+# The module names the task role "${local.prefix}-ecs-task".
+# We attach an extra inline policy rather than touching the module.
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_iam_role_policy" "web_task_extra" {
+  name = "cumbre-web-extra"
+  role = "${local.prefix}-ecs-task"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "S3Uploads"
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.uploads.arn}/*"
+      },
+      {
+        Sid      = "S3UploadsList"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.uploads.arn
+      },
+      {
+        Sid    = "StartSFN"
+        Effect = "Allow"
+        Action = ["states:StartExecution"]
+        Resource = aws_sfn_state_machine.analyze.arn
+      },
+    ]
+  })
+
+  depends_on = [module.app]
+}
+
+# ── GitHub deploy role: also allow pushing to the worker ECR ─────────────────
+# The module's github_deploy role only has ECR push for the web ECR.
+# We attach an extra policy for the worker ECR so CI can push both images.
+resource "aws_iam_role_policy" "github_deploy_worker_ecr" {
+  name = "worker-ecr-push"
+  role = "${local.prefix}-github-deploy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ECRPushWorker"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+        ]
+        Resource = aws_ecr_repository.worker.arn
+      },
+    ]
+  })
+
+  depends_on = [module.app]
+}

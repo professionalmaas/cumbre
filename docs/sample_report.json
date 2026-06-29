@@ -1,0 +1,118 @@
+{
+  "app": "Cumbre",
+  "tagline": "Get your song to the summit.",
+  "genre": "pop",
+  "report": {
+    "summit_score": 65.3,
+    "grade": "D+",
+    "summit_phrase": "on the ascent",
+    "music_score": 70.8,
+    "lyrics_score": 55.0,
+    "genre": "pop",
+    "lyrics_weight": 0.35,
+    "top_fixes": [
+      "Master is -12.49 LUFS; streaming normalizes to -14, so it will be turned down 1.5 dB. Typical for pop.",
+      "Vocabulary is narrow for pop (MTLD 11.74); vary word choice in the verses."
+    ],
+    "music_subscores": {
+      "loudness": 50.2,
+      "dynamics": 0.0,
+      "tempo_fit": 100.0,
+      "danceability": 74.9,
+      "arrangement": 100.0,
+      "stereo": 100.0
+    },
+    "lyrics_subscores": {
+      "rhyme": 25.0,
+      "vocabulary": 29.3,
+      "hook": 100.0,
+      "repetition_balance": 65.8
+    },
+    "music_percentile": 66.7
+  },
+  "audio_features": {
+    "duration_sec": 24.0,
+    "tempo_bpm": 120.2,
+    "time_signature": 4,
+    "key": "C major",
+    "key_index": 0,
+    "mode": 1,
+    "key_strength": 0.858,
+    "loudness_db_rms": -31.59,
+    "energy": 0.486,
+    "danceability": 0.499,
+    "acousticness": 0.689,
+    "instrumentalness": 0.0,
+    "speechiness": 0.0,
+    "valence": 0.7,
+    "liveness": 0.0,
+    "lufs_integrated": -12.49,
+    "true_peak_dbtp": -0.42,
+    "loudness_headroom_db": 1.51,
+    "crest_factor_db": 31.17,
+    "clipping_pct": 0.0,
+    "stereo_correlation": 1.0,
+    "spectral_centroid_hz": 612.0,
+    "spectral_rolloff_hz": 796.4,
+    "sub_bass_ratio": 0.0367,
+    "onset_rate_hz": 5.958,
+    "intro_length_sec": 0.0,
+    "n_sections": 8,
+    "confidence": {
+      "tempo_bpm": "MED-HIGH",
+      "key": "HIGH",
+      "time_signature": "MED",
+      "lufs_integrated": "HIGH",
+      "true_peak_dbtp": "HIGH",
+      "crest_factor_db": "HIGH",
+      "stereo_correlation": "HIGH",
+      "energy": "MED-HIGH",
+      "danceability": "MED",
+      "acousticness": "MED",
+      "instrumentalness": "MED",
+      "speechiness": "MED",
+      "valence": "LOW",
+      "liveness": "LOW",
+      "structure": "MED"
+    },
+    "engines": {
+      "essentia": false,
+      "madmom": false,
+      "demucs": false,
+      "allin1": false,
+      "pyloudnorm": true
+    },
+    "notes": [
+      "liveness has no reliable open-source equivalent; reported as 0 / low-confidence"
+    ]
+  },
+  "lyric_features": {
+    "n_lines": 8,
+    "n_words": 70,
+    "n_unique": 30,
+    "repetition": 0.572,
+    "lexical_diversity": 11.74,
+    "rhyme_density": 1.0,
+    "avg_syllables_per_line": 10.25,
+    "chorus_detected": true,
+    "n_repeated_blocks": 1,
+    "sentiment": 1.0,
+    "explicit": 0,
+    "words_per_minute": 175.0,
+    "rhyme_engine": "cmudict",
+    "notes": []
+  },
+  "model_vector": {
+    "explicit": 0,
+    "instrumentalness": 0.0,
+    "duration_ms": 24000,
+    "year": 2026,
+    "loudness": -31.59,
+    "danceability": 0.499,
+    "energy": 0.486,
+    "acousticness": 0.689,
+    "speechiness": 0.0,
+    "key": 0,
+    "mode": 1
+  }
+}

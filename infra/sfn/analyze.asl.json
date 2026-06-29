@@ -1,0 +1,123 @@
+{
+  "Comment": "Cumbre analyze.song — durable loop. Human-gate order: moderate + fingerprint BEFORE charge; charge idempotent + only after success; audio deleted on deliver. Every Lambda step uses ResultPath so the original input (jobId/s3Key/...) is preserved downstream.",
+  "StartAt": "Validate",
+  "States": {
+    "Validate": {
+      "Type": "Task",
+      "Resource": "${validate_fn_arn}",
+      "ResultPath": "$.validate",
+      "Retry": [{ "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "States.TaskFailed"], "IntervalSeconds": 3, "MaxAttempts": 3, "BackoffRate": 2 }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "RejectValidate" }],
+      "Next": "ValidChoice"
+    },
+    "ValidChoice": {
+      "Type": "Choice",
+      "Choices": [{ "Variable": "$.validate.ok", "BooleanEquals": false, "Next": "RejectValidate" }],
+      "Default": "Moderate"
+    },
+    "Moderate": {
+      "Type": "Task",
+      "Resource": "${moderate_fn_arn}",
+      "ResultPath": "$.moderate",
+      "Retry": [{ "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "States.TaskFailed"], "IntervalSeconds": 3, "MaxAttempts": 3, "BackoffRate": 2 }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "RejectModeration" }],
+      "Next": "ModerateChoice"
+    },
+    "ModerateChoice": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.moderate.block", "BooleanEquals": true, "Next": "RejectModeration" },
+        { "Variable": "$.moderate.review", "BooleanEquals": true, "Next": "ReviewModeration" }
+      ],
+      "Default": "Fingerprint"
+    },
+    "Fingerprint": {
+      "Type": "Task",
+      "Resource": "${fingerprint_fn_arn}",
+      "ResultPath": "$.fingerprint",
+      "Retry": [{ "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "States.TaskFailed"], "IntervalSeconds": 3, "MaxAttempts": 3, "BackoffRate": 2 }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "ReviewCopyright" }],
+      "Next": "FingerprintChoice"
+    },
+    "FingerprintChoice": {
+      "Type": "Choice",
+      "Choices": [{ "Variable": "$.fingerprint.policy", "StringEquals": "BlockAccess", "Next": "ReviewCopyright" }],
+      "Default": "ExtractScore"
+    },
+    "ExtractScore": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.waitForTaskToken",
+      "TimeoutSeconds": 900,
+      "Parameters": {
+        "Cluster": "${ecs_cluster_arn}",
+        "TaskDefinition": "${worker_task_def_arn}",
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": ${worker_subnets_json},
+            "SecurityGroups": ${worker_sgs_json},
+            "AssignPublicIp": "DISABLED"
+          }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            {
+              "Name": "${worker_container_name}",
+              "Environment": [
+                { "Name": "TASK_TOKEN", "Value.$": "$$.Task.Token" },
+                { "Name": "JOB_ID", "Value.$": "$.jobId" },
+                { "Name": "USER_ID", "Value.$": "$.userId" },
+                { "Name": "SONG_ID", "Value.$": "$.songId" },
+                { "Name": "S3_KEY", "Value.$": "$.s3Key" },
+                { "Name": "GENRE", "Value.$": "$.genre" },
+                { "Name": "DEPTH", "Value.$": "$.depth" },
+                { "Name": "LENS", "Value.$": "$.lens" },
+                { "Name": "YEAR", "Value.$": "States.Format('{}', $.year)" }
+              ]
+            }
+          ]
+        }
+      },
+      "ResultPath": "$.worker",
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "ReviewOod" }],
+      "Next": "WorkerOkChoice"
+    },
+    "WorkerOkChoice": {
+      "Type": "Choice",
+      "Choices": [{ "Variable": "$.worker.ok", "BooleanEquals": false, "Next": "ReviewOod" }],
+      "Default": "ConfidenceChoice"
+    },
+    "ConfidenceChoice": {
+      "Type": "Choice",
+      "Choices": [{ "Variable": "$.worker.confidence", "NumericLessThan": ${low_confidence_threshold}, "Next": "ReviewLowConfidence" }],
+      "Default": "Charge"
+    },
+    "Charge": {
+      "Type": "Task",
+      "Resource": "${charge_fn_arn}",
+      "ResultPath": "$.charge",
+      "Retry": [{ "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "States.TaskFailed"], "IntervalSeconds": 3, "MaxAttempts": 3, "BackoffRate": 2 }],
+      "Next": "ChargeChoice"
+    },
+    "ChargeChoice": {
+      "Type": "Choice",
+      "Choices": [{ "Variable": "$.charge.charged", "BooleanEquals": false, "Next": "ReviewKillSwitch" }],
+      "Default": "Deliver"
+    },
+    "Deliver": {
+      "Type": "Task",
+      "Resource": "${deliver_fn_arn}",
+      "ResultPath": "$.deliver",
+      "Retry": [{ "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "States.TaskFailed"], "IntervalSeconds": 3, "MaxAttempts": 3, "BackoffRate": 2 }],
+      "End": true
+    },
+
+    "RejectValidate":      { "Type": "Task", "Resource": "${reject_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "reason": "validate" },   "End": true },
+    "RejectModeration":    { "Type": "Task", "Resource": "${reject_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "reason": "moderation" }, "End": true },
+    "ReviewModeration":    { "Type": "Task", "Resource": "${review_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "category": "moderation",     "payload.$": "$.moderate" },    "End": true },
+    "ReviewCopyright":     { "Type": "Task", "Resource": "${review_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "category": "copyright",      "payload.$": "$.fingerprint" }, "End": true },
+    "ReviewOod":           { "Type": "Task", "Resource": "${review_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "category": "ood",            "payload.$": "$.worker" },      "End": true },
+    "ReviewLowConfidence": { "Type": "Task", "Resource": "${review_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "category": "low_confidence", "payload.$": "$.worker" },      "End": true },
+    "ReviewKillSwitch":    { "Type": "Task", "Resource": "${review_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "category": "drift",          "payload.$": "$.charge" },      "End": true }
+  }
+}

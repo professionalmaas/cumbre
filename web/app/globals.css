@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Cumbre design system — final handoff (docs/design_v2). Warm ember/gold on near-black,
+   mobile-first 440px frame. Fonts loaded via next/font in layout.tsx → CSS vars. */
+:root {
+  --bg: #0d0a06;
+  --app1: #1c140b;
+  --app2: #130d07;
+  --app3: #0c0905;
+
+  --ink: #f7efe2;
+  --ink2: #f3ece0;
+  --muted: #a89a82;
+  --muted2: #9a8b71;
+  --faint: #7f7259;
+  --faint2: #6f6450;
+
+  --ember: #e8552d;
+  --orange: #fb7a3c;
+  --gold: #f6c64a;
+  --amber: #d99a4a;
+
+  --line: rgba(246, 198, 74, 0.14);
+  --line-soft: rgba(246, 198, 74, 0.1);
+  --line-strong: rgba(246, 198, 74, 0.22);
+  --card: rgba(255, 255, 255, 0.022);
+  --warm: rgba(232, 85, 45, 0.12);
+
+  --grad: linear-gradient(135deg, #e8552d, #fb7a3c, #f6c64a);
+  --glow: 0 12px 32px -10px rgba(251, 122, 60, 0.6);
+
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-hanken), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-space-mono), "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    radial-gradient(1100px 700px at 50% -20%, rgba(232, 85, 45, 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, var(--app1), var(--app2) 50%, var(--app3));
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The mobile-first frame: content lives in a single 440px column, centered on wide screens
+   so web and phone are the same experience (no separate desktop layout). */
+.frame {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 24px 26px 96px;
+  min-height: 100vh;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.serif {
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+.grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: 14px;
+  border: 0;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  color: #1a1205;
+  background: var(--grad);
+  box-shadow: var(--glow);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+}
+
+.btn-primary:disabled,
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* Visible keyboard focus — gold ring, never shown for mouse users (focus-visible only). */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

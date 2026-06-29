@@ -1,0 +1,49 @@
+# terraform.tfvars.example — copy to terraform.tfvars and fill in values.
+# The terraform.tfvars file itself must NOT be committed (it contains secrets).
+# Add it to .gitignore.
+
+aws_region  = "us-east-1"
+environment = "prd"
+
+# ── Routing ───────────────────────────────────────────────────────────────────
+host_header = "cumbre.certuspest.com"
+
+# ── GitHub ────────────────────────────────────────────────────────────────────
+github_repo        = "professionalmaas/cumbre"
+github_environment = "prd"
+
+# ── Admin ─────────────────────────────────────────────────────────────────────
+admin_email        = "you@certuspest.com"
+monthly_budget_usd = 200
+
+# ── Shared remote state ────────────────────────────────────────────────────────
+shared_state_bucket = "certus-terraform-state-123456789012"
+shared_state_key    = "shared/prd/terraform.tfstate"
+
+# ── Cognito ───────────────────────────────────────────────────────────────────
+cognito_domain_prefix = "certus-cumbre-prd"
+
+# ── Route53 ───────────────────────────────────────────────────────────────────
+route53_zone_id = ""   # set to hosted zone ID to auto-create DNS A record
+
+# ── App config ────────────────────────────────────────────────────────────────
+admin_emails             = "admin@certuspest.com"
+kill_switch_scoring      = "off"
+low_confidence_threshold = "0.7"
+db_master_username       = "cumbre"
+
+# ── Stripe pass price IDs ─────────────────────────────────────────────────────
+stripe_price_summit = "price_XXXXXXXXXXXXXXXXXX"   # Summit pass (pay-per-song)
+stripe_price_season = "price_XXXXXXXXXXXXXXXXXX"   # Season pass (subscription credits)
+
+# ── ACRCloud ─────────────────────────────────────────────────────────────────
+acrcloud_host = "identify-eu-west-1.acrcloud.com"
+
+# ── Secrets (sensitive — use TF_VAR_ env vars or a secrets-only file) ────────
+session_secret         = "REPLACE_32_CHAR_RANDOM_SECRET"
+stripe_secret_key      = "sk_live_XXXXX"
+stripe_webhook_secret  = "whsec_XXXXX"
+openai_api_key         = "sk-XXXXX"
+anthropic_api_key      = "sk-ant-XXXXX"
+acrcloud_access_key    = "XXXXX"
+acrcloud_access_secret = "XXXXX"
