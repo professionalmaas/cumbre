@@ -9,6 +9,7 @@ import { Brand } from "@/components/Brand";
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     // Surface to server logs / observability without leaking details to the user.
+    // TODO: wire Sentry/analytics (needs DSN)
     console.error("route error", error);
   }, [error]);
 

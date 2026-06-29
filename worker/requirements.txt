@@ -10,7 +10,7 @@ soundfile>=0.12
 pyloudnorm>=0.1.1
 numpy>=1.24
 scipy>=1.10
-scikit-learn>=1.3
+scikit-learn==1.6.0  # pinned to match the pickled fame-blind model (avoids version-skew scoring drift)
 pandas>=2.0
 pronouncing>=0.2.0
 

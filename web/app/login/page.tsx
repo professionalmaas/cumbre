@@ -36,6 +36,15 @@ export default async function LoginPage() {
               DEV_MODE — local harness, no Cognito.
             </p>
           </form>
+        ) : process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true" ? (
+          <>
+            <a href={authorizeUrl("login", "Google")} className="btn-primary" style={{ marginTop: 18 }}>
+              Continue with Google
+            </a>
+            <a href={href!} className="btn-ghost" style={{ marginTop: 10 }}>
+              Continue with email →
+            </a>
+          </>
         ) : (
           <a href={href!} className="btn-primary" style={{ marginTop: 18 }}>
             Continue →

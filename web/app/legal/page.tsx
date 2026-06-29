@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Brand } from "@/components/Brand";
 
-export const metadata = { title: "Cumbre — Terms, Privacy & IP" };
+// Static legal page — no session read, so no force-dynamic; safe to statically render.
+export const metadata: Metadata = {
+  title: "Terms, Privacy & IP · Cumbre",
+  description:
+    "Plain-English summary of Cumbre's terms, privacy, and intellectual-property policy: AI craft feedback only, audio deleted after analysis, lyrics never stored.",
+  alternates: { canonical: "/legal" },
+};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -36,6 +43,31 @@ export default function LegalPage() {
         Last updated {new Date().getFullYear()}. This is a plain-English summary; [entity] should have
         counsel finalize the binding ToS &amp; Privacy Policy before public launch.
       </p>
+
+      <nav
+        style={{
+          marginTop: 18,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+        }}
+      >
+        {[
+          { href: "/legal/terms", label: "Terms of Service" },
+          { href: "/legal/privacy", label: "Privacy Policy" },
+          { href: "/legal/dmca", label: "Copyright / DMCA" },
+          { href: "/legal/aup", label: "Acceptable Use" },
+        ].map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="btn-ghost"
+            style={{ fontSize: 12, padding: "7px 12px", borderRadius: 999 }}
+          >
+            {l.label} →
+          </Link>
+        ))}
+      </nav>
 
       <Section title="What Cumbre is — and isn't">
         Cumbre gives <b>AI-generated craft feedback</b> to help you improve a song. It is

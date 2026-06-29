@@ -37,8 +37,8 @@ low_confidence_threshold = "0.7"
 db_master_username = "cumbre"
 
 # ── Stripe pass price IDs ─────────────────────────────────────────────────────
-stripe_price_summit = "REQUIRED — price_XXXX"   # Summit pass (pay-per-song)
-stripe_price_season = "REQUIRED — price_XXXX"   # Season pass (subscription credits)
+stripe_price_summit = "REQUIRED — price_XXXX" # Summit pass (pay-per-song)
+stripe_price_season = "REQUIRED — price_XXXX" # Season pass (subscription credits)
 
 # ── ACRCloud ─────────────────────────────────────────────────────────────────
 acrcloud_host = "REQUIRED — identify-eu-west-1.acrcloud.com"

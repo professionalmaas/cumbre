@@ -14,8 +14,10 @@
   --ink2: #f3ece0;
   --muted: #a89a82;
   --muted2: #9a8b71;
-  --faint: #7f7259;
-  --faint2: #6f6450;
+  /* Lightened so body-size text meets WCAG AA (>=4.5:1) on the #0d0a06 background while
+     keeping the warm ember/gold palette: --faint ~6:1, --faint2 ~5:1. */
+  --faint: #9c8e74;
+  --faint2: #8f8168;
 
   --ember: #e8552d;
   --orange: #fb7a3c;

@@ -1,10 +1,19 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getUser } from "@/lib/auth/session";
 import { Brand } from "@/components/Brand";
 import { PlansClient } from "@/components/PlansClient";
 
+// Reads the signed-in user (entitlement is account-bound) — must stay dynamic.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Plans · Cumbre",
+  description:
+    "Choose your pass — a one-time Summit Pass for a single analysis, or a Season Pass for unlimited climbs. Secure checkout via Stripe.",
+  alternates: { canonical: "/plans" },
+};
 
 export default async function PlansPage() {
   // Sign-in before pay (entitlement is tied to the account).

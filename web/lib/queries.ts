@@ -5,6 +5,7 @@ import type { Genre, Job, ReviewRow } from "@/lib/types";
 
 // Provision the user row on first authenticated request and grant the free first
 // credit exactly once (only when the row is newly created). Idempotent.
+// TODO: clickwrap consent (persist tos_accepted_at + version on first authed request)
 export async function ensureUser(sub: string, email: string | null): Promise<void> {
   await tx(async (c) => {
     const res = await c.query(

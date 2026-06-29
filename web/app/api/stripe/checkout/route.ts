@@ -23,6 +23,11 @@ export async function POST(request: Request) {
     client_reference_id: user.sub,
     customer_email: user.email ?? undefined,
     metadata: { user_id: user.sub, plan: plan.id },
+    // Summit (mode=payment) one-time charges: ask Stripe to email a receipt to the buyer.
+    // (Subscriptions email invoice receipts on their own; hosted Payment Links handle their
+    // own receipts via the Stripe Dashboard "Customer emails" setting.)
+    payment_intent_data:
+      plan.mode === "payment" && user.email ? { receipt_email: user.email } : undefined,
     // For subscriptions, propagate the user id onto the subscription too.
     subscription_data: plan.mode === "subscription" ? { metadata: { user_id: user.sub } } : undefined,
     success_url: `${appUrl}/upload?checkout=success`,

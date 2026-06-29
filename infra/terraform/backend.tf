@@ -6,14 +6,13 @@
 # State key is app-scoped so it never conflicts with the shared layer.
 terraform {
   backend "s3" {
-    # Override with: terraform init -backend-config="bucket=certus-terraform-state-123456789012"
-    # Or set TF_VAR_state_bucket / pass -backend-config on init.
-    # Default filled from terraform.tfvars (cannot use variable references in backend block).
-    bucket = "certus-terraform-state-ACCOUNT_ID_PLACEHOLDER"
+    # Override with: terraform init -backend-config="bucket=hub-terraform-state-110844251073"
+    # Or pass -backend-config on init; the value below is the account-specific default.
+    bucket = "hub-terraform-state-110844251073"
     key    = "cumbre/prd/terraform.tfstate"
     region = "us-east-1"
     # Recommended: enable encryption + lock
-    encrypt        = true
-    use_lockfile   = true
+    encrypt      = true
+    use_lockfile = true
   }
 }

@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { query, setJob } from "./lib/db";
 import { deleteObject } from "./lib/s3";
+import { log } from "./lib/log";
 
 // URL-safe, non-guessable public share token (independent of the internal job id).
 function shareToken(): string {
@@ -19,6 +20,7 @@ interface Input {
 
 // Write the report, mark the job done, and DELETE the uploaded audio (store features, not audio).
 export async function handler(event: Input): Promise<{ ok: boolean }> {
+  log("info", "deliver.start", { jobId: event.jobId });
   const report = event.worker.report ?? {};
   const s = (report as Report).scores ?? {};
 
@@ -46,5 +48,6 @@ export async function handler(event: Input): Promise<{ ok: boolean }> {
   } catch {
     // best-effort; the bucket lifecycle expires objects within a day as a backstop
   }
+  log("info", "deliver.done", { jobId: event.jobId, overall: s.overall ?? null });
   return { ok: true };
 }

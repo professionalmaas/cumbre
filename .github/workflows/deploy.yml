@@ -10,12 +10,12 @@ jobs:
   deploy-web:
     uses: professionalmaas/home/.github/workflows/deploy-app.yml@PRD
     with:
-      ecr_repository: certus-cumbre-prd
-      ecs_cluster:    certus-prd
-      ecs_service:    certus-cumbre-prd
+      ecr_repository: hub-cumbre-prd
+      ecs_cluster:    hub-prd
+      ecs_service:    hub-cumbre-prd
       app_dir:        web
       environment:    prd
-      health_url:     https://cumbre.certuspest.com/api/health
+      health_url:     https://getcumbre.com/api/health
     secrets:
       aws_role_arn: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
 
@@ -44,7 +44,7 @@ jobs:
       - name: Build and push worker image
         env:
           DOCKER_BUILDKIT: 1
-          WORKER_IMAGE: ${{ steps.login-ecr.outputs.registry }}/certus-cumbre-prd-worker
+          WORKER_IMAGE: ${{ steps.login-ecr.outputs.registry }}/hub-cumbre-prd-worker
         # Build context is repo root so the Dockerfile can copy both ml/ and worker/
         run: |
           docker build \

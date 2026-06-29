@@ -5,6 +5,7 @@ import { getEntitlement } from "@/lib/entitlement";
 import { listJobs } from "@/lib/queries";
 import { signOut } from "@/lib/actions/auth";
 import { Brand } from "@/components/Brand";
+import { ManageBillingButton } from "@/components/ManageBillingButton";
 
 export const dynamic = "force-dynamic";
 
@@ -60,9 +61,12 @@ export default async function ProfilePage() {
         {ent.subscriptionActive ? "Season Pass · unlimited analyses" : `${ent.credits} Summit credit${ent.credits === 1 ? "" : "s"} remaining`}
       </p>
 
-      <Link href="/upload" className="btn-primary">
-        Climb another track →
-      </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <Link href="/upload" className="btn-primary">
+          Climb another track →
+        </Link>
+        {ent.subscriptionActive && <ManageBillingButton />}
+      </div>
 
       <h2 className="serif" style={{ fontSize: 19, margin: "30px 0 10px" }}>
         Your climbs

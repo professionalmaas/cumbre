@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Newsreader, Hanken_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -22,10 +22,34 @@ const spaceMono = Space_Mono({
   display: "swap",
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+const DESCRIPTION =
+  "An AI climbing guide for your song: a genre-aware craft grade, your Top 3 fixes, and the route to the summit.";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0d0a06",
+  colorScheme: "dark",
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Cumbre — Get your song to the summit",
-  description:
-    "An AI climbing guide for your song: a genre-aware craft grade, your Top 3 fixes, and the route to the summit.",
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "Cumbre",
+    title: "Cumbre — Get your song to the summit",
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cumbre — Get your song to the summit",
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

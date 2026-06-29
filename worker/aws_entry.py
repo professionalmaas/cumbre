@@ -14,6 +14,7 @@ The uploaded audio is downloaded to /tmp and removed; the worker never persists 
 This mirrors worker/modal_app.py::extract_and_score (kept for the non-AWS path).
 """
 from __future__ import annotations
+import datetime
 import json
 import os
 import sys
@@ -23,6 +24,17 @@ import boto3
 
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
+
+
+def _log(level: str, event: str, **fields) -> None:
+    """Structured single-line JSON log to stdout (picked up by the awslogs driver)."""
+    print(json.dumps({
+        "ts": datetime.datetime.utcnow().isoformat() + "Z",
+        "level": level,
+        "service": "cumbre-worker",
+        "event": event,
+        **fields,
+    }, default=str))
 
 
 def _env(name: str, default: str | None = None) -> str:
@@ -59,6 +71,8 @@ def run() -> dict:
     year = int(os.environ.get("YEAR", "2026"))
     depth = os.environ.get("DEPTH", "deep")
     lens = os.environ.get("LENS", "ar")
+
+    _log("info", "worker.start", jobId=os.environ.get("JOB_ID"), s3Key=key)
 
     audio = _download(s3, upload_bucket, key, ".audio")
     try:
@@ -103,6 +117,7 @@ def run() -> dict:
 
         # Confidence drives the Step Functions ConfidenceChoice ($.worker.confidence).
         overall = report.get("scores", {}).get("overall", 0)
+        _log("info", "worker.success", jobId=os.environ.get("JOB_ID"), overall=overall)
         return {
             "ok": True,
             "report": report,             # the contract `response` dict (Deliver lambda reads this)
@@ -128,6 +143,7 @@ def main() -> int:
             print(json.dumps(result, default=str, indent=2))
         return 0
     except Exception as e:  # noqa: BLE001
+        _log("error", "worker.error", jobId=os.environ.get("JOB_ID"), message=str(e)[:500])
         if token:
             sfn.send_task_failure(taskToken=token, error="WorkerError", cause=str(e)[:32000])
         print(f"worker failed: {e}", file=sys.stderr)

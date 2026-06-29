@@ -26,7 +26,7 @@ export function redirectUri(): string {
 }
 
 // Hosted-UI URL. The sign-up link lives on this page (self-service registration).
-export function authorizeUrl(state: string): string {
+export function authorizeUrl(state: string, identityProvider?: string): string {
   const c = cfg();
   const p = new URLSearchParams({
     client_id: c.clientId,
@@ -35,6 +35,8 @@ export function authorizeUrl(state: string): string {
     redirect_uri: redirectUri(),
     state,
   });
+  // identity_provider=Google sends the user straight to Google, bypassing the hosted-UI chooser.
+  if (identityProvider) p.set("identity_provider", identityProvider);
   return `${c.hostedUi}/oauth2/authorize?${p.toString()}`;
 }
 

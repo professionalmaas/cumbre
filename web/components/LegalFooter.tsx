@@ -1,23 +1,18 @@
 import Link from "next/link";
 
-// Very small print: hover for the short version (native title tooltip), click for the full
-// terms. Protects Cumbre's proprietary methodology + the AI-feedback / no-guarantee disclaimers.
-const SHORT =
-  "© Cumbre. Scores, the summit methodology, and the report format are proprietary and protected. " +
-  "AI craft feedback — informational only, not professional A&R advice, and not a prediction of " +
-  "commercial success. Your audio is analyzed then deleted; lyrics are never stored or displayed.";
-
+// Small print. The full terms used to be hidden in a native title= tooltip, which is
+// invisible to keyboard and touch users; we now show a concise, visible disclosure line and
+// link the details to /legal. Protects Cumbre's proprietary methodology + the AI-feedback /
+// no-guarantee disclaimers.
 export function LegalFooter() {
   return (
     <p
-      title={SHORT}
       style={{
         textAlign: "center",
-        color: "var(--faint2, #6f6450)",
+        color: "var(--faint2, #8f8168)",
         fontSize: 10,
         lineHeight: 1.6,
         marginTop: 20,
-        cursor: "help",
       }}
     >
       © {new Date().getFullYear()} Cumbre · proprietary scoring &amp; methodology · AI feedback, not

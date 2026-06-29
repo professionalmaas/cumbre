@@ -7,6 +7,7 @@ import { useEffect } from "react";
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
+    // TODO: wire Sentry/analytics (needs DSN)
     console.error("global error", error);
   }, [error]);
 

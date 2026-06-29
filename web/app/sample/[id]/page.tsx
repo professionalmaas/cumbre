@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Brand } from "@/components/Brand";
@@ -6,6 +7,16 @@ import { SAMPLE_TEASERS } from "@/lib/samples";
 import { bandLabel } from "@/lib/report";
 
 export const dynamic = "force-static";
+
+export function generateMetadata({ params }: { params: { id: string } }): Metadata {
+  const t = SAMPLE_TEASERS[params.id];
+  if (!t) return { title: "Sample report · Cumbre" };
+  return {
+    title: `${t.title} — sample report · Cumbre`,
+    description: `A sample Cumbre route report for "${t.title}" (${t.genre}): summit score ${t.score}, with a peek at the music and lyrics grades and one fix.`,
+    alternates: { canonical: `/sample/${t.id}` },
+  };
+}
 
 // Public TEASER of a sample report — intentionally partial (anti-copy). Shows the gauge,
 // verdict, two scores, one fix headline, and two subscores; everything else is locked behind

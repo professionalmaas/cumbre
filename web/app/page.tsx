@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { SampleCards } from "@/components/SampleCards";
 import { LegalFooter } from "@/components/LegalFooter";
+import { LandingIntro } from "@/components/LandingIntro";
 
-export const dynamic = "force-dynamic";
+// Static marketing landing — no per-user session is read here, so it can be statically
+// rendered (faster, cacheable) rather than forced dynamic.
+export const metadata: Metadata = {
+  title: "Cumbre — Get your song to the summit",
+  description:
+    "Drop a track and get a genre-aware, fame-blind craft grade plus your Top 3 fixes — the route to the summit.",
+  alternates: { canonical: "/" },
+};
 
 const STEPS = [
   { n: 1, title: "Drop your track", note: "MP3 or WAV, up to 12 minutes. Pick the genre you're climbing in." },
@@ -13,7 +22,12 @@ const STEPS = [
 
 export default function EntryPage() {
   return (
-    <main className="frame">
+    <>
+      {/* Cinematic intro splash — a fixed overlay above the landing. The landing below is
+          fully SSR'd (SEO + works with JS off); LandingIntro is the only client island and
+          dissolves on Enter. */}
+      <LandingIntro />
+      <main className="frame">
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Brand />
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: 2, color: "var(--muted)" }}>
@@ -84,6 +98,7 @@ export default function EntryPage() {
       </Link>
 
       <LegalFooter />
-    </main>
+      </main>
+    </>
   );
 }
