@@ -69,6 +69,24 @@ variable "google_client_secret" {
   description = "Google OAuth client secret. Empty = Google IdP not created."
 }
 
+variable "use_ses_email" {
+  type        = bool
+  default     = false
+  description = "Flip true AFTER SES production access is granted: Cognito sends via the verified getcumbre.com SES identity instead of the unreliable COGNITO_DEFAULT sender."
+}
+
+variable "ses_identity_arn" {
+  type        = string
+  default     = "arn:aws:ses:us-east-1:110844251073:identity/getcumbre.com"
+  description = "SES verified domain identity ARN used when use_ses_email=true."
+}
+
+variable "ses_from_email" {
+  type        = string
+  default     = "Cumbre <no-reply@getcumbre.com>"
+  description = "From address for Cognito emails when use_ses_email=true (must be under the verified SES domain)."
+}
+
 # ── App secrets (sensitive — provide via tfvars or environment variables) ──────
 # These map directly to the Secrets Manager secret and ECS task environment.
 variable "database_url" {

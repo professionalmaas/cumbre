@@ -55,8 +55,12 @@ resource "aws_cognito_user_pool" "cumbre" {
     enabled = true
   }
 
+  # Email: COGNITO_DEFAULT now (unreliable, ~50/day cap). Flip use_ses_email=true (AFTER SES
+  # production access is granted) to send via the verified getcumbre.com SES identity.
   email_configuration {
-    email_sending_account = "COGNITO_DEFAULT"
+    email_sending_account = var.use_ses_email ? "DEVELOPER" : "COGNITO_DEFAULT"
+    source_arn            = var.use_ses_email ? var.ses_identity_arn : null
+    from_email_address    = var.use_ses_email ? var.ses_from_email : null
   }
 
   # Verification message
@@ -157,6 +161,28 @@ resource "aws_cognito_identity_provider" "google" {
   lifecycle {
     ignore_changes = [provider_details]
   }
+}
+
+# Authorize Cognito to send via the SES identity (required when email_sending_account=DEVELOPER).
+# Gated on use_ses_email so it only exists once SES email is turned on.
+resource "aws_ses_identity_policy" "cognito_send" {
+  count    = var.use_ses_email ? 1 : 0
+  identity = var.ses_identity_arn
+  name     = "${local.prefix}-cognito-send"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "AllowCognitoSend"
+      Effect    = "Allow"
+      Principal = { Service = "cognito-idp.amazonaws.com" }
+      Action    = ["ses:SendEmail", "ses:SendRawEmail"]
+      Resource  = var.ses_identity_arn
+      Condition = {
+        StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.current.account_id }
+        ArnLike      = { "aws:SourceArn" = aws_cognito_user_pool.cumbre.arn }
+      }
+    }]
+  })
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
