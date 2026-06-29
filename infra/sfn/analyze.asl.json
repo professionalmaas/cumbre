@@ -1,5 +1,5 @@
 {
-  "Comment": "Cumbre analyze.song — durable loop. Human-gate order: moderate + fingerprint BEFORE charge; charge idempotent + only after success; audio deleted on deliver. Every Lambda step uses ResultPath so the original input (jobId/s3Key/...) is preserved downstream.",
+  "Comment": "Cumbre analyze.song -- durable loop. Human-gate order: moderate + fingerprint BEFORE charge; charge idempotent + only after success; audio deleted on deliver. Every Lambda step uses ResultPath so the original input (jobId/s3Key/...) is preserved downstream. ExtractScore now uses lambda:invoke (warm container) instead of ecs:runTask.waitForTaskToken; the Fargate task definition remains deployed as a revertible fallback.",
   "StartAt": "Validate",
   "States": {
     "Validate": {
@@ -46,39 +46,37 @@
     },
     "ExtractScore": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::ecs:runTask.waitForTaskToken",
+      "Resource": "arn:aws:states:::lambda:invoke",
       "TimeoutSeconds": 900,
       "Parameters": {
-        "Cluster": "${ecs_cluster_arn}",
-        "TaskDefinition": "${worker_task_def_arn}",
-        "LaunchType": "FARGATE",
-        "NetworkConfiguration": {
-          "AwsvpcConfiguration": {
-            "Subnets": ${worker_subnets_json},
-            "SecurityGroups": ${worker_sgs_json},
-            "AssignPublicIp": "DISABLED"
-          }
-        },
-        "Overrides": {
-          "ContainerOverrides": [
-            {
-              "Name": "${worker_container_name}",
-              "Environment": [
-                { "Name": "TASK_TOKEN", "Value.$": "$$.Task.Token" },
-                { "Name": "JOB_ID", "Value.$": "$.jobId" },
-                { "Name": "USER_ID", "Value.$": "$.userId" },
-                { "Name": "SONG_ID", "Value.$": "$.songId" },
-                { "Name": "S3_KEY", "Value.$": "$.s3Key" },
-                { "Name": "GENRE", "Value.$": "$.genre" },
-                { "Name": "DEPTH", "Value.$": "$.depth" },
-                { "Name": "LENS", "Value.$": "$.lens" },
-                { "Name": "YEAR", "Value.$": "States.Format('{}', $.year)" }
-              ]
-            }
-          ]
+        "FunctionName": "${worker_lambda_arn}",
+        "Payload": {
+          "jobId.$":  "$.jobId",
+          "userId.$": "$.userId",
+          "songId.$": "$.songId",
+          "s3Key.$":  "$.s3Key",
+          "genre.$":  "$.genre",
+          "depth.$":  "$.depth",
+          "lens.$":   "$.lens",
+          "year.$":   "$.year"
         }
       },
       "ResultPath": "$.worker",
+      "ResultSelector": {
+        "ok.$":            "$.Payload.ok",
+        "report.$":        "$.Payload.report",
+        "fameblind.$":     "$.Payload.fameblind",
+        "confidence.$":    "$.Payload.confidence",
+        "model_version.$": "$.Payload.model_version"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
       "Catch": [{ "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "ReviewOod" }],
       "Next": "WorkerOkChoice"
     },

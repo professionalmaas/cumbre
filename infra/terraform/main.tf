@@ -716,9 +716,14 @@ resource "aws_iam_role_policy" "sfn_permissions" {
         Sid    = "InvokeLambdaSteps"
         Effect = "Allow"
         Action = ["lambda:InvokeFunction"]
-        Resource = [for name in local.step_names :
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.prefix}-${name}"
-        ]
+        Resource = concat(
+          [for name in local.step_names :
+            "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.prefix}-${name}"
+          ],
+          # Lambda worker (warm-container path replacing the Fargate waitForTaskToken).
+          # Fargate RunTask statements below are kept for the revertible fallback.
+          [aws_lambda_function.worker_lambda.arn]
+        )
       },
       {
         Sid      = "RunWorkerTaskDef"
@@ -828,14 +833,11 @@ resource "aws_sfn_state_machine" "analyze" {
     reject_fn_arn      = aws_lambda_function.step["reject"].arn
     review_fn_arn      = aws_lambda_function.step["review"].arn
 
-    ecs_cluster_arn       = local.s.ecs_cluster_id
-    worker_task_def_arn   = aws_ecs_task_definition.worker.arn
-    worker_container_name = "worker"
-
-    # JSON-encoded arrays so the ASL templatefile can embed them as inline JSON values.
-    # The updated ASL uses ${worker_subnets_json} and ${worker_sgs_json}.
-    worker_subnets_json = jsonencode(local.s.private_subnet_ids)
-    worker_sgs_json     = jsonencode([aws_security_group.worker.id])
+    # Lambda worker (warm-container path -- replaces the Fargate waitForTaskToken).
+    # The Fargate ECS task definition / ECR repo remain unchanged as a revertible
+    # fallback: to revert, swap the ASL back to the ecs:runTask.waitForTaskToken
+    # resource and pass the ecs_cluster_arn / worker_task_def_arn vars instead.
+    worker_lambda_arn = aws_lambda_function.worker_lambda.arn
 
     # Numeric threshold passed to the ConfidenceChoice NumericLessThan condition
     low_confidence_threshold = tonumber(var.low_confidence_threshold)
@@ -1007,6 +1009,198 @@ resource "aws_iam_role_policy" "github_deploy_worker_ecr" {
           "ecr:PutImage",
         ]
         Resource = aws_ecr_repository.worker.arn
+      },
+    ]
+  })
+
+  depends_on = [module.app]
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (h) Lambda worker -- warm-container path (additive; Fargate path kept intact)
+# ECR repo: hub-cumbre-prd-worker-lambda
+# Lambda:   hub-cumbre-prd-worker-lambda
+#
+# IMPORTANT -- chicken-and-egg on first deploy:
+#   1. Run `terraform apply` with -target=aws_ecr_repository.worker_lambda to
+#      create the ECR repo first.
+#   2. Build + push the Lambda image:
+#        docker build -f worker/Dockerfile.lambda -t <repo_url>:latest .
+#        docker push <repo_url>:latest
+#   3. Run the full `terraform apply` to create the Lambda function and update
+#      the state machine.  The Lambda resource will fail if the repo is empty.
+# ══════════════════════════════════════════════════════════════════════════════
+
+resource "aws_ecr_repository" "worker_lambda" {
+  name                 = "${local.prefix}-worker-lambda"
+  image_tag_mutability = "MUTABLE"
+  image_scanning_configuration { scan_on_push = true }
+  tags = { Name = "${local.prefix}-worker-lambda" }
+}
+
+resource "aws_ecr_lifecycle_policy" "worker_lambda" {
+  repository = aws_ecr_repository.worker_lambda.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection    = { tagStatus = "any", countType = "imageCountMoreThan", countNumber = 10 }
+      action       = { type = "expire" }
+    }]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "worker_lambda" {
+  name              = "/aws/lambda/${local.prefix}-worker-lambda"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-worker-lambda-logs" }
+}
+
+resource "aws_iam_role" "worker_lambda" {
+  name = "${local.prefix}-worker-lambda"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = { Name = "${local.prefix}-worker-lambda" }
+}
+
+# VPC access (ENI create/delete) + basic CloudWatch Logs
+resource "aws_iam_role_policy_attachment" "worker_lambda_vpc" {
+  role       = aws_iam_role.worker_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy" "worker_lambda_permissions" {
+  name = "worker-lambda-permissions"
+  role = aws_iam_role.worker_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = concat(
+      [
+        {
+          Sid      = "S3Uploads"
+          Effect   = "Allow"
+          Action   = ["s3:GetObject", "s3:DeleteObject"]
+          Resource = "${aws_s3_bucket.uploads.arn}/*"
+        },
+        {
+          Sid      = "S3Artifacts"
+          Effect   = "Allow"
+          Action   = ["s3:GetObject"]
+          Resource = "${aws_s3_bucket.artifacts.arn}/*"
+        },
+        {
+          Sid      = "ReadWorkerSecret"
+          Effect   = "Allow"
+          Action   = ["secretsmanager:GetSecretValue"]
+          Resource = aws_secretsmanager_secret.worker.arn
+        },
+        {
+          Sid    = "CloudWatchLogs"
+          Effect = "Allow"
+          Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+          Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.prefix}-worker-lambda:*"
+        },
+      ],
+      # If a KMS CMK is in use, the Lambda role also needs kms:Decrypt
+      local.s.kms_secrets_key_arn != "" ? [{
+        Sid      = "KmsDecrypt"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = local.s.kms_secrets_key_arn
+      }] : []
+    )
+  })
+}
+
+# ── Lambda function ───────────────────────────────────────────────────────────
+# package_type=Image: image_uri must reference an existing tag in the repo.
+# The very first deploy requires the image to be pushed BEFORE terraform apply
+# (see chicken-and-egg note above).
+resource "aws_lambda_function" "worker_lambda" {
+  function_name = "${local.prefix}-worker-lambda"
+  role          = aws_iam_role.worker_lambda.arn
+  package_type  = "Image"
+
+  # image_uri references the ECR repo; :latest is updated by CI on each push.
+  # On first deploy, push the image before running terraform apply.
+  image_uri = "${aws_ecr_repository.worker_lambda.repository_url}:latest"
+
+  # 10 GB memory (closest Lambda max to the 4 GB Fargate task; gives librosa/numba
+  # plenty of headroom and also maximises the 2-vCPU equivalent allocation).
+  memory_size = 10240
+
+  # Lambda max timeout = 15 min (same as the Fargate task's 900 s timeout).
+  timeout = 900
+
+  ephemeral_storage {
+    # /tmp: 4 GB for audio download + numba temp files
+    size = 4096
+  }
+
+  vpc_config {
+    # Reuse the existing worker security group (egress-all; S3/Secrets via VPC endpoints)
+    subnet_ids         = local.s.private_subnet_ids
+    security_group_ids = [aws_security_group.worker.id]
+  }
+
+  environment {
+    variables = {
+      S3_UPLOAD_BUCKET = aws_s3_bucket.uploads.id
+      # Bucket name (not URI) so aws_entry._parse_model_loc() resolves the key correctly
+      CUMBRE_MODEL_S3  = aws_s3_bucket.artifacts.id
+      # API keys passed as plain env vars here; for tighter least-privilege these
+      # could be injected via a Lambda extension reading from Secrets Manager instead.
+      ANTHROPIC_API_KEY = var.anthropic_api_key
+      OPENAI_API_KEY    = var.openai_api_key
+      # numba / matplotlib dirs -- /opt/numba_cache is baked into the image at build
+      # time (pre-warmed); /tmp is the Lambda writable scratchpad.
+      NUMBA_CACHE_DIR = "/opt/numba_cache"
+      HOME            = "/tmp"
+      MPLCONFIGDIR    = "/tmp"
+      AWS_REGION      = var.aws_region
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.worker_lambda_vpc,
+    aws_cloudwatch_log_group.worker_lambda,
+    aws_ecr_repository.worker_lambda,
+  ]
+
+  tags = { Name = "${local.prefix}-worker-lambda" }
+}
+
+# ── Allow CI to push the Lambda worker image to ECR ──────────────────────────
+resource "aws_iam_role_policy" "github_deploy_worker_lambda_ecr" {
+  name = "worker-lambda-ecr-push"
+  role = "${local.prefix}-github-deploy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ECRPushWorkerLambda"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+        ]
+        Resource = aws_ecr_repository.worker_lambda.arn
       },
     ]
   })

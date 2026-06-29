@@ -1,0 +1,88 @@
+# syntax=docker/dockerfile:1
+# Cumbre worker -- Lambda container image
+# ========================================
+# Build context: repo root (docker build -f worker/Dockerfile.lambda .)
+#
+# Requires Docker BuildKit (default since Docker 23.x; set DOCKER_BUILDKIT=1 on
+# older installs).  BuildKit is needed for multi-stage COPY --from and the
+# heredoc syntax in the prewarm RUN step.
+#
+# Base: public.ecr.aws/lambda/python:3.11 (Amazon Linux 2023 / glibc 2.34).
+# AL2023 uses dnf (not apt/yum).  ffmpeg is NOT in the AL2023 dnf repos, so we
+# copy a static ffmpeg binary from the mwader/static-ffmpeg image instead.
+# libsndfile IS available via dnf (libsndfile package).
+#
+# Numba JIT pre-warm:
+#   At build time we run a tiny librosa analysis on a 1-second silent WAV so the
+#   numba JIT cache for librosa's core DSP routines is baked into the image at
+#   /opt/numba_cache.  Cold invocations skip JIT compilation entirely.
+#
+# CMD: ["aws_entry.handler"]
+#   The Lambda runtime calls aws_entry.handler(event, context).
+#   LAMBDA_TASK_ROOT=/var/task -- all Python modules must be importable from there.
+
+# ── Stage 1: static ffmpeg binary ─────────────────────────────────────────────
+FROM mwader/static-ffmpeg:7.1 AS ffmpeg
+
+# ── Stage 2: install Python deps ──────────────────────────────────────────────
+FROM public.ecr.aws/lambda/python:3.11 AS builder
+
+# libsndfile + build tools (for wheels that need C headers)
+RUN dnf install -y libsndfile libsndfile-devel gcc python3-devel && dnf clean all
+
+WORKDIR /build
+COPY worker/requirements.txt ./requirements.txt
+
+# Install into ${LAMBDA_TASK_ROOT} so the Lambda runtime finds everything
+# without sys.path manipulation.  Use --no-deps for packages that pull in large
+# optional extras we do not need (avoids ~300 MB of unused torch sub-packages).
+RUN pip install --no-cache-dir -t /var/task -r requirements.txt
+
+# ── Stage 3: runtime image ────────────────────────────────────────────────────
+FROM public.ecr.aws/lambda/python:3.11
+
+# libsndfile shared library (soundfile / librosa need it at runtime)
+RUN dnf install -y libsndfile && dnf clean all
+
+# ffmpeg static binary from Stage 1 -- placed on PATH
+COPY --from=ffmpeg /ffmpeg /usr/local/bin/ffmpeg
+COPY --from=ffmpeg /ffprobe /usr/local/bin/ffprobe
+
+# Python packages from builder
+COPY --from=builder /var/task /var/task
+
+# ML engine (cumbre_engine, cumbre_scoring, cumbre_lyrics, cumbre_report, ...)
+# Placed at LAMBDA_TASK_ROOT root so `import cumbre_engine` works directly.
+COPY ml/ /var/task/
+
+# Worker entrypoint; aws_entry.py must be importable as `aws_entry` at root.
+COPY worker/aws_entry.py /var/task/aws_entry.py
+
+# Writable dirs for numba, matplotlib, and home for any lib that expands ~.
+# /opt/numba_cache is read-only at Lambda runtime (baked at build time below).
+# /tmp is the only writable dir in Lambda; numba falls back there on write errors.
+ENV NUMBA_CACHE_DIR=/opt/numba_cache \
+    HOME=/tmp \
+    MPLCONFIGDIR=/tmp \
+    PYTHONUNBUFFERED=1
+
+# Pre-warm numba JIT cache at build time.
+# We write a 1-second 22050 Hz silent WAV to /tmp and run librosa.load() +
+# librosa.feature.mfcc() + librosa.beat.beat_track() -- the JIT-heavy routines.
+# The resulting numba cache is written to /opt/numba_cache (writable during
+# build; read-only at Lambda runtime).  Cold invocations skip JIT compilation.
+# Written as a python -c oneliner to avoid BuildKit heredoc edge cases.
+RUN mkdir -p /opt/numba_cache && python -c "\
+import wave, io, os; \
+sr=22050; buf=io.BytesIO(); \
+wf=wave.open(buf,'wb'); wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sr); wf.writeframes(b'\x00\x00'*sr); wf.close(); \
+open('/tmp/prewarm.wav','wb').write(buf.getvalue()); \
+import librosa; \
+y,_=librosa.load('/tmp/prewarm.wav',sr=sr,mono=True); \
+librosa.feature.mfcc(y=y,sr=sr,n_mfcc=13); \
+librosa.beat.beat_track(y=y,sr=sr); \
+os.remove('/tmp/prewarm.wav'); \
+print('numba pre-warm complete; cache at /opt/numba_cache') \
+"
+
+CMD ["aws_entry.handler"]
