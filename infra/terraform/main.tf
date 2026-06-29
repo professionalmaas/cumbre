@@ -444,6 +444,9 @@ locals {
     S3_UPLOAD_BUCKET = aws_s3_bucket.uploads.id
     SECRET_ARN       = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.prefix}/secrets"
     REGION           = var.aws_region
+    # Step Lambdas read DATABASE_URL from env (steps/lib/db.ts). RDS is private; the value
+    # already lives in the app secret, injected here so the loop can update job state.
+    DATABASE_URL = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_instance.cumbre.endpoint}/cumbre"
   }
 }
 
