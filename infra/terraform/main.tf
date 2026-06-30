@@ -506,10 +506,9 @@ resource "aws_lambda_function" "step" {
   timeout     = 60
   memory_size = 512
 
-  # Account concurrency limit is 10 total — reservation disabled until limit increase
-  # is approved (Service Quotas → Lambda → Concurrent executions → request 1000).
-  # Re-enable (10/step) after increase lands.
-  reserved_concurrent_executions = -1
+  # 10 reserved per step Lambda (8 steps × 10 = 80 reserved).
+  # Account limit raised to 1000 (Service Quotas, approved 2026-06-30).
+  reserved_concurrent_executions = 10
 
   vpc_config {
     subnet_ids         = local.s.private_subnet_ids
@@ -1178,9 +1177,9 @@ resource "aws_lambda_function" "worker_lambda" {
   # Lambda max timeout = 15 min (same as the Fargate task's 900 s timeout).
   timeout = 900
 
-  # Reservation disabled until account concurrency limit is raised from 10 to 1000.
-  # Re-enable (30) after Service Quotas increase is approved.
-  reserved_concurrent_executions = -1
+  # 30 reserved for the ML worker Lambda.
+  # Account limit raised to 1000 (Service Quotas, approved 2026-06-30).
+  reserved_concurrent_executions = 30
 
   ephemeral_storage {
     # /tmp: 4 GB for audio download + numba temp files
