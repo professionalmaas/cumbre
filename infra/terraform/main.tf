@@ -279,6 +279,7 @@ resource "aws_db_instance" "cumbre" {
   backup_retention_period   = 7
   backup_window             = "03:00-04:00"
   maintenance_window        = "Mon:04:00-Mon:05:00"
+  apply_immediately         = true
 
   # Multi-AZ standby: synchronous replication to a second AZ; automatic failover < 2 min.
   multi_az = true
