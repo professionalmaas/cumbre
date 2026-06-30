@@ -23,6 +23,7 @@ import json
 import os
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 import boto3
 
@@ -56,9 +57,9 @@ def _download(s3, bucket: str, key: str, suffix: str) -> str:
     return path
 
 
-def _download_to(s3, bucket: str, key: str, dest: str) -> str:
+def _download_to(s3, bucket: str, key: str, dest: str) -> None:
+    """Download an S3 object to a fixed destination path (for the pkl cache)."""
     s3.download_file(bucket, key, dest)
-    return dest
 
 
 def _parse_model_loc() -> tuple[str, str] | None:
@@ -101,53 +102,47 @@ def run() -> dict:
         if not v.get("ok"):
             return {"ok": False, "reason": v.get("reason", "invalid"), "validate": v}
 
-        import concurrent.futures
-
         loc = _parse_model_loc()
 
-        # Run build_report + analyze_song in parallel to cut wall time.
-        def _build_report():
+        import cumbre_scoring as cs  # noqa: E402
+
+        def _build():
             return cr.build_report(audio, genre, depth, lens, year)
 
-        def _analyze():
+        def _score():
             if not loc:
                 return None
-            import cumbre_scoring as cs  # noqa: E402
             return cs.analyze_song(audio, genre, year=year)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            f_report = pool.submit(_build_report)
-            f_scoring = pool.submit(_analyze)
-            report = f_report.result()
-            scoring_out = f_scoring.result()
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            r_fut = pool.submit(_build)
+            s_fut = pool.submit(_score)
+            report = r_fut.result()
+            score_out = s_fut.result()  # None if no model loc configured
 
         # Fame-blind model score (internal only — never surfaced as "hit probability").
         # Optional/secondary: its absence must never break the report.
         model_version = None
         fameblind = None
-        if loc and scoring_out is not None:
+        if loc and score_out is not None:
             try:
                 import pickle
                 import numpy as np
 
-                # Use /tmp cache so warm Lambda invocations skip S3 download.
-                if os.path.exists(PKL_CACHE):
-                    mp = PKL_CACHE
-                    own_mp = False
-                else:
-                    _download_to(s3, loc[0], loc[1], PKL_CACHE)
-                    mp = PKL_CACHE
-                    own_mp = False  # keep in cache; don't remove
+                mp = PKL_CACHE
+                if not os.path.exists(mp):
+                    _download_to(s3, loc[0], loc[1], mp)
 
                 art = pickle.load(open(mp, "rb"))
                 feats = art.get("features") or art.get("required_vars") or []
-                mv = scoring_out.get("model_vector", {})
+                mv = score_out.get("model_vector", {})
                 x = np.array([[float(mv.get(f, 0.0)) for f in feats]])
                 proba = float(art["best_model"].predict_proba(x)[0, 1])
-                thr = float(art.get("best_f1_threshold", 0.5))
+                thr = art.get("best_f1_threshold", 0.5)
                 model_version = str(art.get("trained_at", "")) or None
-                fameblind = {"score": round(proba, 4), "threshold": thr,
+                fameblind = {"score": round(proba, 4), "threshold": float(thr),
                              "above_threshold": bool(proba >= thr)}
+                # Do NOT os.remove(mp) — it is the persistent cache.
             except Exception as e:  # noqa: BLE001
                 fameblind = {"error": str(e)[:200]}  # internal-only; report still returns
 

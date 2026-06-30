@@ -29,6 +29,7 @@ admin_email        = "REQUIRED — your-email@example.com"
 monthly_budget_usd = 200
 
 # ── Shared remote state ────────────────────────────────────────────────────────
+# Replace ACCOUNT_ID with your 12-digit AWS account ID.
 shared_state_bucket = "hub-terraform-state-ACCOUNT_ID"
 shared_state_key    = "hub-prd/shared/terraform.tfstate"
 

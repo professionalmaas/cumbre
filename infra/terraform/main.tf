@@ -442,7 +442,7 @@ resource "aws_iam_role_policy" "lambda_step_permissions" {
 
 # ── Step Lambda helper: local vars for all steps ──────────────────────────────
 locals {
-  step_names = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review"]
+  step_names = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review", "fail"]
 
   # Common env vars injected into every step Lambda
   step_env = {
@@ -838,6 +838,7 @@ resource "aws_sfn_state_machine" "analyze" {
     deliver_fn_arn     = aws_lambda_function.step["deliver"].arn
     reject_fn_arn      = aws_lambda_function.step["reject"].arn
     review_fn_arn      = aws_lambda_function.step["review"].arn
+    fail_fn_arn        = aws_lambda_function.step["fail"].arn
 
     # Lambda worker (warm-container path -- replaces the Fargate waitForTaskToken).
     # The Fargate ECS task definition / ECR repo remain unchanged as a revertible
@@ -1140,7 +1141,7 @@ resource "aws_lambda_function" "worker_lambda" {
   # Lambda doesn't accept multi-arch OCI index tags; must reference a single-arch manifest.
   # Use the specific amd64 digest extracted from the OCI index (:latest).
   # Update this digest after each image rebuild (see docs/AWS_RUNBOOK.md).
-  image_uri = "${aws_ecr_repository.worker_lambda.repository_url}@sha256:a6b42222f2c417d4cfe7fcfe43554e2019806ffef3572a502b85921b23c60c79"
+  image_uri = "${aws_ecr_repository.worker_lambda.repository_url}@sha256:2dbba0c661f43f95689055a66f87dc61b3256f04d891ca9bf4f906310bf08ddc"
 
   # 3008 MB = standard AWS Lambda quota ceiling (requires quota increase for higher).
   # Sufficient for librosa/numba/sklearn; ephemeral_storage gives 4 GB /tmp for audio.

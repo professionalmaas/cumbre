@@ -442,7 +442,7 @@ export function ReportView({
         className="card"
         style={{ padding: "20px 18px 24px", background: "linear-gradient(180deg,var(--warm),rgba(255,255,255,0.02))" }}
       >
-        <SummitGauge score={r.scores.overall} band={r.scores.band} />
+        <SummitGauge score={Math.max(17, r.scores.overall)} band={r.scores.band} />
         <p
           className="serif"
           style={{ textAlign: "center", fontStyle: "italic", color: "var(--muted)", margin: "10px 6px 0", fontSize: 15 }}
@@ -466,8 +466,8 @@ export function ReportView({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 18 }}>
         {(
           [
-            ["Music", r.scores.music],
-            ["Lyrics", r.scores.lyrics],
+            ["Music", Math.max(17, r.scores.music)],
+            ["Lyrics", Math.max(17, r.scores.lyrics)],
           ] as const
         ).map(([k, v]) => (
           <div key={k} className="card" style={{ padding: "16px 18px" }}>

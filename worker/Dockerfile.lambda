@@ -58,8 +58,10 @@ COPY --from=builder /var/task /var/task
 # Placed at LAMBDA_TASK_ROOT root so `import cumbre_engine` works directly.
 COPY ml/ /var/task/
 
-# Worker entrypoint; aws_entry.py must be importable as `aws_entry` at root.
+# Worker entrypoint + report builder; both must be importable from /var/task root.
+# cumbre_report lives in worker/ (not ml/), so it must be copied explicitly.
 COPY worker/aws_entry.py /var/task/aws_entry.py
+COPY worker/cumbre_report.py /var/task/cumbre_report.py
 
 # Writable dirs for numba, matplotlib, and home for any lib that expands ~.
 # /opt/numba_cache is read-only at Lambda runtime (baked at build time below).

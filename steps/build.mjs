@@ -3,7 +3,7 @@
 import { build } from "esbuild";
 import { mkdirSync } from "fs";
 
-const STEPS = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review"];
+const STEPS = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review", "fail"];
 
 for (const name of STEPS) {
   mkdirSync(`dist/${name}`, { recursive: true });

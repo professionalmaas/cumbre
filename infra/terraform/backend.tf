@@ -9,7 +9,7 @@ terraform {
     # Override with: terraform init -backend-config="bucket=hub-terraform-state-110844251073"
     # Or pass -backend-config on init; the value below is the account-specific default.
     bucket = "hub-terraform-state-110844251073"
-    key    = "cumbre/prd/terraform.tfstate"
+    key    = "hub-prd/cumbre/terraform.tfstate"
     region = "us-east-1"
     # Recommended: enable encryption + lock
     encrypt      = true
