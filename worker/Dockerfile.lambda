@@ -7,10 +7,11 @@
 # older installs).  BuildKit is needed for multi-stage COPY --from and the
 # heredoc syntax in the prewarm RUN step.
 #
-# Base: public.ecr.aws/lambda/python:3.11 (Amazon Linux 2023 / glibc 2.34).
-# AL2023 uses dnf (not apt/yum).  ffmpeg is NOT in the AL2023 dnf repos, so we
-# copy a static ffmpeg binary from the mwader/static-ffmpeg image instead.
-# libsndfile IS available via dnf (libsndfile package).
+# Base: public.ecr.aws/lambda/python:3.11 (Amazon Linux 2 / glibc 2.26).
+# Lambda Python 3.11 uses AL2 with yum; AL2023/dnf starts at Python 3.12.
+# ffmpeg is NOT in the AL2 yum repos, so we copy a static ffmpeg binary from
+# the mwader/static-ffmpeg image instead.
+# libsndfile IS available via yum (libsndfile package).
 #
 # Numba JIT pre-warm:
 #   At build time we run a tiny librosa analysis on a 1-second silent WAV so the
@@ -28,21 +29,23 @@ FROM mwader/static-ffmpeg:7.1 AS ffmpeg
 FROM public.ecr.aws/lambda/python:3.11 AS builder
 
 # libsndfile + build tools (for wheels that need C headers)
-RUN dnf install -y libsndfile libsndfile-devel gcc python3-devel && dnf clean all
+# Lambda Python 3.11 base is Amazon Linux 2 (yum); AL2023/dnf starts at Python 3.12
+# gcc-c++ is required by numpy/scipy when no pre-built wheel matches the platform
+RUN yum install -y libsndfile libsndfile-devel gcc gcc-c++ python3-devel && yum clean all
 
 WORKDIR /build
 COPY worker/requirements.txt ./requirements.txt
 
-# Install into ${LAMBDA_TASK_ROOT} so the Lambda runtime finds everything
-# without sys.path manipulation.  Use --no-deps for packages that pull in large
-# optional extras we do not need (avoids ~300 MB of unused torch sub-packages).
-RUN pip install --no-cache-dir -t /var/task -r requirements.txt
+# Upgrade pip so it recognises modern manylinux wheel tags (manylinux_2_17 etc.)
+# --prefer-binary avoids source builds where a wheel exists; gcc-c++ handles the rest.
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir --prefer-binary -t /var/task -r requirements.txt
 
 # ── Stage 3: runtime image ────────────────────────────────────────────────────
 FROM public.ecr.aws/lambda/python:3.11
 
 # libsndfile shared library (soundfile / librosa need it at runtime)
-RUN dnf install -y libsndfile && dnf clean all
+RUN yum install -y libsndfile && yum clean all
 
 # ffmpeg static binary from Stage 1 -- placed on PATH
 COPY --from=ffmpeg /ffmpeg /usr/local/bin/ffmpeg
