@@ -240,8 +240,9 @@ resource "aws_db_parameter_group" "cumbre" {
   description = "Cumbre RDS Postgres 16 parameter group"
 
   parameter {
-    name  = "max_connections"
-    value = "300"
+    name         = "max_connections"
+    value        = "300"
+    apply_method = "pending-reboot"
   }
 
   tags = { Name = "${local.prefix}-pg16" }
