@@ -234,13 +234,27 @@ resource "aws_security_group" "rds" {
   }
 }
 
+resource "aws_db_parameter_group" "cumbre" {
+  name        = "${local.prefix}-pg16"
+  family      = "postgres16"
+  description = "Cumbre RDS Postgres 16 parameter group"
+
+  parameter {
+    name  = "max_connections"
+    value = "300"
+  }
+
+  tags = { Name = "${local.prefix}-pg16" }
+}
+
 resource "aws_db_instance" "cumbre" {
   identifier        = "${local.prefix}-db"
   engine            = "postgres"
   engine_version    = "16"
-  instance_class    = "db.t4g.micro"
-  allocated_storage = 20
-  storage_type      = "gp3"
+  instance_class        = "db.t4g.small"
+  allocated_storage     = 20
+  max_allocated_storage = 100
+  storage_type          = "gp3"
 
   db_name  = "cumbre"
   username = var.db_master_username
@@ -248,6 +262,7 @@ resource "aws_db_instance" "cumbre" {
 
   db_subnet_group_name   = aws_db_subnet_group.cumbre.name
   vpc_security_group_ids = [aws_security_group.rds.id]
+  parameter_group_name   = aws_db_parameter_group.cumbre.name
 
   # Never publicly reachable
   publicly_accessible = false
@@ -264,8 +279,8 @@ resource "aws_db_instance" "cumbre" {
   backup_window             = "03:00-04:00"
   maintenance_window        = "Mon:04:00-Mon:05:00"
 
-  # No Multi-AZ in Phase 1 (cost vs HA trade-off — see AWS_ARCHITECTURE.md deferred list)
-  multi_az = false
+  # Multi-AZ standby: synchronous replication to a second AZ; automatic failover < 2 min.
+  multi_az = true
 
   # Performance Insights (free tier)
   performance_insights_enabled = true
@@ -320,7 +335,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     id     = "expire-audio"
     status = "Enabled"
     filter { prefix = "" }
-    expiration { days = 1 }
+    expiration { days = 3 }
   }
 }
 
@@ -450,9 +465,9 @@ locals {
     S3_UPLOAD_BUCKET = aws_s3_bucket.uploads.id
     SECRET_ARN       = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.prefix}/secrets"
     REGION           = var.aws_region
-    # Step Lambdas read DATABASE_URL from env (steps/lib/db.ts). RDS is private; the value
-    # already lives in the app secret, injected here so the loop can update job state.
-    DATABASE_URL = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_instance.cumbre.endpoint}/cumbre"
+    # Step Lambdas read DATABASE_URL from env (steps/lib/db.ts). Traffic routes through
+    # the RDS Proxy for connection pooling; proxy endpoint is hostname-only (no port suffix).
+    DATABASE_URL = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_proxy.cumbre.endpoint}:5432/cumbre"
   }
 }
 
@@ -490,6 +505,10 @@ resource "aws_lambda_function" "step" {
   timeout     = 60
   memory_size = 512
 
+  # Reserve capacity so step functions can never be starved by the worker Lambda
+  # or any other account-level spike. 10 per step × 8 steps = 80 reserved total.
+  reserved_concurrent_executions = 10
+
   vpc_config {
     subnet_ids         = local.s.private_subnet_ids
     security_group_ids = [aws_security_group.ecs_steps.id]
@@ -497,6 +516,10 @@ resource "aws_lambda_function" "step" {
 
   environment {
     variables = local.step_env
+  }
+
+  tracing_config {
+    mode = "Active"
   }
 
   depends_on = [
@@ -852,8 +875,8 @@ resource "aws_sfn_state_machine" "analyze" {
 
   logging_configuration {
     log_destination        = "${aws_cloudwatch_log_group.sfn.arn}:*"
-    include_execution_data = false
-    level                  = "ERROR"
+    include_execution_data = true
+    level                  = "ALL"
   }
 
   tracing_configuration {
@@ -890,7 +913,7 @@ module "app" {
   # downtime for non-US users. Keep min_tasks running 24/7 (base=1 on-demand in the module).
   enable_schedule_scaling = false
   min_tasks               = 1
-  max_tasks               = 4
+  max_tasks               = 16
 
   # ── CI/CD ────────────────────────────────────────────────────────────────────
   github_repo        = var.github_repo
@@ -925,7 +948,7 @@ module "app" {
 
   # ── Secrets (Secrets Manager; never in image) ─────────────────────────────────
   app_secrets = {
-    DATABASE_URL           = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_instance.cumbre.endpoint}/cumbre"
+    DATABASE_URL           = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_proxy.cumbre.endpoint}:5432/cumbre"
     COGNITO_CLIENT_SECRET  = aws_cognito_user_pool_client.web.client_secret
     SESSION_SECRET         = var.session_secret
     STRIPE_SECRET_KEY      = var.stripe_secret_key
@@ -954,6 +977,9 @@ module "app" {
     ADMIN_EMAILS              = var.admin_emails
     KILL_SWITCH_SCORING       = var.kill_switch_scoring
     LOW_CONFIDENCE_THRESHOLD  = var.low_confidence_threshold
+    NEXT_PUBLIC_RUM_APP_MONITOR_ID   = aws_rum_app_monitor.cumbre.id
+    NEXT_PUBLIC_RUM_IDENTITY_POOL_ID = aws_cognito_identity_pool.rum.id
+    NEXT_PUBLIC_AWS_REGION           = var.aws_region
   }
 }
 
@@ -1150,6 +1176,10 @@ resource "aws_lambda_function" "worker_lambda" {
   # Lambda max timeout = 15 min (same as the Fargate task's 900 s timeout).
   timeout = 900
 
+  # Reserve capacity: 30 concurrent workers max. Prevents account-level Lambda quota
+  # exhaustion and caps worst-case Fargate-equivalent cost under a traffic spike.
+  reserved_concurrent_executions = 30
+
   ephemeral_storage {
     # /tmp: 4 GB for audio download + numba temp files
     size = 4096
@@ -1177,6 +1207,10 @@ resource "aws_lambda_function" "worker_lambda" {
       MPLCONFIGDIR    = "/tmp"
       # AWS_REGION is reserved by Lambda and cannot be overridden — removed.
     }
+  }
+
+  tracing_config {
+    mode = "Active"
   }
 
   depends_on = [

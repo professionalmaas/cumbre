@@ -33,7 +33,7 @@ variable "admin_email" {
 
 variable "monthly_budget_usd" {
   type    = number
-  default = 200
+  default = 300
 }
 
 # ── Shared remote state ────────────────────────────────────────────────────────
