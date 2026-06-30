@@ -7,8 +7,12 @@ export const dynamic = "force-dynamic";
 
 // Cognito hosted-UI redirect: exchange the code, verify the ID token (fail closed),
 // provision the user row + free credit on first login, then set the session cookie.
+// Use NEXT_PUBLIC_APP_URL for redirects — request.url reflects the container's
+// internal address (http://0.0.0.0:3000) behind the ALB, not the public domain.
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  const origin = appUrl || new URL(request.url).origin;
   const code = searchParams.get("code");
   if (!code) return NextResponse.redirect(`${origin}/login?error=missing_code`);
 
