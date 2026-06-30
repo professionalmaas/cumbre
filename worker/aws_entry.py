@@ -21,7 +21,6 @@ from __future__ import annotations
 import datetime
 import json
 import os
-import subprocess
 import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -31,7 +30,6 @@ import boto3
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
 
-# Change 2: Fixed cache path for the fameblind pkl — survives across warm Lambda invocations.
 PKL_CACHE = "/tmp/fameblind_model.pkl"
 
 
@@ -65,37 +63,6 @@ def _download_to(s3, bucket: str, key: str, dest: str) -> None:
     s3.download_file(bucket, key, dest)
 
 
-def _trim(path: str, max_sec: int = 90) -> str:
-    """Trim audio to max_sec seconds using ffmpeg.
-
-    Falls back to the original path silently if ffmpeg is unavailable or fails.
-    Never raises — a trim failure must not crash the worker.
-    """
-    suffix = os.path.splitext(path)[1] or ".audio"
-    try:
-        fd, trimmed = tempfile.mkstemp(suffix=suffix)
-        os.close(fd)
-        result = subprocess.run(
-            ["ffmpeg", "-i", path, "-t", str(max_sec), "-y", "-loglevel", "error", trimmed],
-            check=False,
-        )
-        if result.returncode == 0 and os.path.getsize(trimmed) > 0:
-            try:
-                os.remove(path)
-            except OSError:
-                pass
-            return trimmed
-        # ffmpeg failed or produced empty file — clean up and use original
-        try:
-            os.remove(trimmed)
-        except OSError:
-            pass
-        _log("warning", "worker.trim_skipped", reason="ffmpeg_nonzero_rc", rc=result.returncode)
-    except Exception as exc:  # noqa: BLE001
-        _log("warning", "worker.trim_skipped", reason=str(exc)[:200])
-    return path
-
-
 def _parse_model_loc() -> tuple[str, str] | None:
     """CUMBRE_MODEL_S3 may be 's3://bucket/key' or a bucket (+ CUMBRE_MODEL_KEY)."""
     loc = os.environ.get("CUMBRE_MODEL_S3", "")
@@ -126,8 +93,6 @@ def run() -> dict:
     _log("info", "worker.start", jobId=os.environ.get("JOB_ID"), s3Key=key)
 
     audio = _download(s3, upload_bucket, key, ".audio")
-    # Change 1: Trim to 90 s before analysis — biggest single latency win.
-    audio = _trim(audio, max_sec=90)
     try:
         sys.path.insert(0, ML_DIR)
         sys.path.insert(0, os.path.dirname(__file__))
@@ -138,7 +103,6 @@ def run() -> dict:
         if not v.get("ok"):
             return {"ok": False, "reason": v.get("reason", "invalid"), "validate": v}
 
-        # Change 3: Run build_report and cumbre_scoring in parallel — they are independent.
         loc = _parse_model_loc()
 
         import cumbre_scoring as cs  # noqa: E402
@@ -151,7 +115,6 @@ def run() -> dict:
                 return None
             return cs.analyze_song(audio, genre, year=year)
 
-        # Full RICH report matching docs/analysis-contract.json (engine + MIR + A&R).
         report = None
         score_out = None
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -169,7 +132,6 @@ def run() -> dict:
                 import pickle
                 import numpy as np
 
-                # Change 2: Use cached pkl — download only on first (cold) invocation.
                 mp = PKL_CACHE
                 if not os.path.exists(mp):
                     _download_to(s3, loc[0], loc[1], mp)
