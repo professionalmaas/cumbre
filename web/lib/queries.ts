@@ -1,5 +1,5 @@
 import { query, one, tx } from "@/lib/db";
-import type { Genre, Job, ReviewRow } from "@/lib/types";
+import type { Genre, Job, ReviewRow, ReviewRowEnhanced, JobsByDayPoint } from "@/lib/types";
 
 // ---- users & credits ---------------------------------------------------------
 
@@ -197,6 +197,61 @@ export async function listOpenReviews(): Promise<ReviewRow[]> {
   );
 }
 
+// Enhanced: joins jobs + songs for richer context in the review UI.
+export async function listOpenReviewsEnhanced(): Promise<ReviewRowEnhanced[]> {
+  return query<ReviewRowEnhanced>(
+    `select
+       rq.id, rq.job_id, rq.category, rq.payload, rq.created_at,
+       coalesce(rq.priority, 2)  as priority,
+       coalesce(rq.version, 1)   as version,
+       rq.reviewer_id, rq.claimed_at, rq.decided_at,
+       rq.decision_note, rq.flag_signals,
+       j.status  as job_status,
+       j.confidence,
+       j.flagged_reason,
+       s.original_filename,
+       s.genre
+     from review_queue rq
+     join  jobs  j on j.id = rq.job_id
+     left join songs s on s.id = j.song_id
+     where rq.resolved = false
+     order by rq.priority asc, rq.created_at asc`
+  );
+}
+
+export async function approveReview(reviewId: string): Promise<void> {
+  await tx(async (c) => {
+    const r = await c.query<{ job_id: string }>(
+      `select job_id from review_queue where id = $1`,
+      [reviewId]
+    );
+    if (!r.rows[0]) return;
+    // Human override: the content cleared review — mark job as done so the
+    // results page shows the report (if results row exists) or as queued for retry.
+    const hasResult = await c.query<{ exists: boolean }>(
+      `select exists(select 1 from results where job_id = $1) as exists`,
+      [r.rows[0].job_id]
+    );
+    const newStatus = hasResult.rows[0]?.exists ? "done" : "queued";
+    await c.query(`update jobs set status = $2 where id = $1`, [r.rows[0].job_id, newStatus]);
+    await c.query(
+      `update review_queue set resolved = true, resolution = 'approved', decided_at = now() where id = $1`,
+      [reviewId]
+    );
+  });
+}
+
+export async function claimReview(reviewId: string, adminEmail: string): Promise<boolean> {
+  const res = await query<{ id: string }>(
+    `update review_queue
+        set reviewer_id = $2, claimed_at = now(), version = version + 1
+      where id = $1 and reviewer_id is null and resolved = false
+      returning id`,
+    [reviewId, adminEmail]
+  );
+  return res.length > 0;
+}
+
 export async function rejectReview(reviewId: string): Promise<void> {
   await tx(async (c) => {
     const r = await c.query<{ job_id: string }>(
@@ -237,6 +292,41 @@ export async function dismissReview(reviewId: string): Promise<void> {
     `update review_queue set resolved = true, resolution = 'dismissed' where id = $1`,
     [reviewId]
   );
+}
+
+// ---- admin dashboard time-series ---------------------------------------------
+
+export async function getJobsByDay(days = 7): Promise<JobsByDayPoint[]> {
+  const rows = await query<{ day: string; status: string; job_count: string }>(
+    `select
+       to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as day,
+       status,
+       count(*)::int as job_count
+     from jobs
+     where created_at >= now() - ($1 || ' days')::interval
+     group by 1, 2
+     order by 1 asc`,
+    [days]
+  );
+
+  // Pivot: group by day, summing per status
+  const map = new Map<string, JobsByDayPoint>();
+  for (const r of rows) {
+    if (!map.has(r.day)) map.set(r.day, { day: r.day, done: 0, failed: 0, total: 0 });
+    const pt = map.get(r.day)!;
+    const n = Number(r.job_count);
+    pt.total += n;
+    if (r.status === "done") pt.done += n;
+    if (r.status === "failed" || r.status === "rejected") pt.failed += n;
+  }
+  return Array.from(map.values());
+}
+
+export async function getReviewQueueDepth(): Promise<number> {
+  const row = await one<{ n: string }>(
+    `select count(*)::int as n from review_queue where resolved = false`
+  );
+  return Number(row?.n ?? 0);
 }
 
 // ---- admin dashboard aggregates ----------------------------------------------
