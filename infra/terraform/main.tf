@@ -234,6 +234,19 @@ resource "aws_security_group" "rds" {
   }
 }
 
+resource "aws_db_parameter_group" "cumbre" {
+  name        = "${local.prefix}-pg16"
+  family      = "postgres16"
+  description = "Cumbre RDS Postgres 16 parameter group"
+
+  parameter {
+    name  = "max_connections"
+    value = "300"
+  }
+
+  tags = { Name = "${local.prefix}-pg16" }
+}
+
 resource "aws_db_instance" "cumbre" {
   identifier        = "${local.prefix}-db"
   engine            = "postgres"
@@ -249,6 +262,7 @@ resource "aws_db_instance" "cumbre" {
 
   db_subnet_group_name   = aws_db_subnet_group.cumbre.name
   vpc_security_group_ids = [aws_security_group.rds.id]
+  parameter_group_name   = aws_db_parameter_group.cumbre.name
 
   # Never publicly reachable
   publicly_accessible = false
@@ -451,9 +465,9 @@ locals {
     S3_UPLOAD_BUCKET = aws_s3_bucket.uploads.id
     SECRET_ARN       = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.prefix}/secrets"
     REGION           = var.aws_region
-    # Step Lambdas read DATABASE_URL from env (steps/lib/db.ts). RDS is private; the value
-    # already lives in the app secret, injected here so the loop can update job state.
-    DATABASE_URL = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_instance.cumbre.endpoint}/cumbre"
+    # Step Lambdas read DATABASE_URL from env (steps/lib/db.ts). Traffic routes through
+    # the RDS Proxy for connection pooling; proxy endpoint is hostname-only (no port suffix).
+    DATABASE_URL = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_proxy.cumbre.endpoint}:5432/cumbre"
   }
 }
 
@@ -502,6 +516,10 @@ resource "aws_lambda_function" "step" {
 
   environment {
     variables = local.step_env
+  }
+
+  tracing_config {
+    mode = "Active"
   }
 
   depends_on = [
@@ -930,7 +948,7 @@ module "app" {
 
   # ── Secrets (Secrets Manager; never in image) ─────────────────────────────────
   app_secrets = {
-    DATABASE_URL           = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_instance.cumbre.endpoint}/cumbre"
+    DATABASE_URL           = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_proxy.cumbre.endpoint}:5432/cumbre"
     COGNITO_CLIENT_SECRET  = aws_cognito_user_pool_client.web.client_secret
     SESSION_SECRET         = var.session_secret
     STRIPE_SECRET_KEY      = var.stripe_secret_key
@@ -959,6 +977,9 @@ module "app" {
     ADMIN_EMAILS              = var.admin_emails
     KILL_SWITCH_SCORING       = var.kill_switch_scoring
     LOW_CONFIDENCE_THRESHOLD  = var.low_confidence_threshold
+    NEXT_PUBLIC_RUM_APP_MONITOR_ID   = aws_rum_app_monitor.cumbre.id
+    NEXT_PUBLIC_RUM_IDENTITY_POOL_ID = aws_cognito_identity_pool.rum.id
+    NEXT_PUBLIC_AWS_REGION           = var.aws_region
   }
 }
 
@@ -1186,6 +1207,10 @@ resource "aws_lambda_function" "worker_lambda" {
       MPLCONFIGDIR    = "/tmp"
       # AWS_REGION is reserved by Lambda and cannot be overridden — removed.
     }
+  }
+
+  tracing_config {
+    mode = "Active"
   }
 
   depends_on = [

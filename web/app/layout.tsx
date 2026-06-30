@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader, Hanken_Grotesk, Space_Mono } from "next/font/google";
+import { RumSnippet } from "@/components/RumSnippet";
 import "./globals.css";
 
 const newsreader = Newsreader({
@@ -55,7 +56,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${newsreader.variable} ${hanken.variable} ${spaceMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <RumSnippet />
+        {children}
+      </body>
     </html>
   );
 }

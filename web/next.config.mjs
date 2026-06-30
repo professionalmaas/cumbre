@@ -13,23 +13,8 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Opt out of browser features the app doesn't need
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(self)" },
-  // CSP: locks down script/style/frame sources.
-  // unsafe-inline is required for Next.js hydration inline scripts and Tailwind inline styles.
-  // Nonce-based CSP (tighter) requires middleware and is a future hardening step.
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://js.stripe.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "connect-src 'self' https://*.stripe.com https://api.stripe.com https://*.amazoncognito.com",
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
-      "object-src 'none'",
-      "base-uri 'self'",
-    ].join("; "),
-  },
+  // CSP is now handled dynamically by middleware.ts (nonce-based; removes unsafe-inline).
+  // Static fallback intentionally omitted here to avoid header conflicts.
 ];
 
 const nextConfig = {
