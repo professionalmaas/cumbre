@@ -1,17 +1,21 @@
 """
-Cumbre worker — AWS-native entrypoint (Fargate task launched by Step Functions).
-=================================================================================
-Step Functions runs this container with `ecs:runTask.waitForTaskToken` and passes,
-via container-override env vars:
-    TASK_TOKEN, JOB_ID, S3_KEY, GENRE, YEAR
-The task role provides S3 read (uploads + artifacts) and states:SendTaskSuccess/Failure.
+Cumbre worker -- AWS-native entrypoint.
+=======================================
+Two execution paths share the same analysis logic:
 
-Flow: download audio from S3 -> ml/cumbre_scoring.analyze_song (+ optional fame-blind
-model from the artifacts bucket) -> SendTaskSuccess with the report. On any error,
-SendTaskFailure so the state machine routes the job to human review (ReviewOod).
+  Fargate path (original, kept as fallback):
+    Step Functions invokes via ecs:runTask.waitForTaskToken and passes parameters
+    as container-override env vars: TASK_TOKEN, JOB_ID, S3_KEY, GENRE, YEAR, etc.
+    main() reads those env vars, calls run(), then sends SendTaskSuccess/Failure.
 
-The uploaded audio is downloaded to /tmp and removed; the worker never persists it.
-This mirrors worker/modal_app.py::extract_and_score (kept for the non-AWS path).
+  Lambda path (new, warm container):
+    Step Functions invokes via lambda:invoke and passes a JSON payload dict with
+    keys: jobId, userId, songId, s3Key, genre, year, depth, lens.
+    handler(event, context) maps payload keys to env vars then calls run(), and
+    returns the result dict directly (SFN reads $.Payload from the Lambda response).
+    No TASK_TOKEN / SendTask* calls needed -- Lambda invoke is synchronous.
+
+The analysis logic lives entirely in run(); neither entrypoint duplicates it.
 """
 from __future__ import annotations
 import datetime
@@ -27,7 +31,7 @@ ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
 
 
 def _log(level: str, event: str, **fields) -> None:
-    """Structured single-line JSON log to stdout (picked up by the awslogs driver)."""
+    """Structured single-line JSON log to stdout (picked up by awslogs / Lambda)."""
     print(json.dumps({
         "ts": datetime.datetime.utcnow().isoformat() + "Z",
         "level": level,
@@ -64,6 +68,12 @@ def _parse_model_loc() -> tuple[str, str] | None:
 
 
 def run() -> dict:
+    """Core analysis logic; reads parameters from os.environ.
+    Called by both main() (Fargate path) and handler() (Lambda path).
+    The caller is responsible for populating the relevant env vars before calling.
+    Required: S3_UPLOAD_BUCKET, S3_KEY.
+    Optional: GENRE, YEAR, DEPTH, LENS, JOB_ID, CUMBRE_MODEL_S3.
+    """
     s3 = boto3.client("s3", region_name=REGION)
     upload_bucket = _env("S3_UPLOAD_BUCKET")
     key = _env("S3_KEY")
@@ -148,6 +158,54 @@ def main() -> int:
             sfn.send_task_failure(taskToken=token, error="WorkerError", cause=str(e)[:32000])
         print(f"worker failed: {e}", file=sys.stderr)
         return 1
+
+
+def handler(event: dict, context) -> dict:
+    """Lambda entrypoint for the warm-container worker path.
+
+    Step Functions (lambda:invoke) passes the execution input as the Lambda
+    payload.  Expected keys (all strings unless noted):
+        jobId, userId, songId, s3Key, genre, year (int or str), depth, lens.
+
+    S3_UPLOAD_BUCKET and CUMBRE_MODEL_S3 come from the Lambda environment
+    (set in Terraform); all per-job fields come from the event payload so the
+    Lambda container stays warm across jobs without re-parsing env vars.
+
+    Returns the result dict directly.  Step Functions reads $.Payload from the
+    Lambda response and maps it to $.worker via ResultSelector.  Raises on any
+    unhandled error so Step Functions retries and eventually routes to ReviewOod
+    via the Catch block -- identical behaviour to the Fargate task-token path.
+    """
+    # Map per-job payload keys into the env vars that run() reads.
+    # Do NOT permanently mutate the process env for keys that vary per job so
+    # that a warm container serving a second invocation sees fresh values.
+    # We use a try/finally to restore previous values (or delete if absent).
+    overrides = {
+        "S3_KEY":   str(event.get("s3Key", "")),
+        "GENRE":    str(event.get("genre", "pop")),
+        "YEAR":     str(event.get("year", "2026")),
+        "DEPTH":    str(event.get("depth", "deep")),
+        "LENS":     str(event.get("lens", "ar")),
+        "JOB_ID":   str(event.get("jobId", "")),
+        "USER_ID":  str(event.get("userId", "")),
+        "SONG_ID":  str(event.get("songId", "")),
+    }
+    previous = {k: os.environ.get(k) for k in overrides}
+    try:
+        os.environ.update(overrides)
+        result = run()
+    except Exception as e:  # noqa: BLE001
+        _log("error", "worker.error", jobId=event.get("jobId"), message=str(e)[:500])
+        raise  # Let Step Functions Retry/Catch handle it
+    finally:
+        # Restore original values so the next warm invocation is not polluted.
+        for k, prev in previous.items():
+            if prev is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = prev
+
+    return result
 
 
 if __name__ == "__main__":
