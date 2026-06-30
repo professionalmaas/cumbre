@@ -77,7 +77,7 @@
           "BackoffRate": 2
         }
       ],
-      "Catch": [{ "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "ReviewOod" }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "FailJob" }],
       "Next": "WorkerOkChoice"
     },
     "WorkerOkChoice": {
@@ -110,6 +110,7 @@
       "End": true
     },
 
+    "FailJob":             { "Type": "Task", "Resource": "${fail_fn_arn}",   "Parameters": { "jobId.$": "$.jobId" },                       "End": true },
     "RejectValidate":      { "Type": "Task", "Resource": "${reject_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "reason": "validate" },   "End": true },
     "RejectModeration":    { "Type": "Task", "Resource": "${reject_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "reason": "moderation" }, "End": true },
     "ReviewModeration":    { "Type": "Task", "Resource": "${review_fn_arn}", "Parameters": { "jobId.$": "$.jobId", "category": "moderation",     "payload.$": "$.moderate" },    "End": true },

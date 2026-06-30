@@ -27,10 +27,16 @@ export function Analyzing({ status, stage }: { status: string; stage: string | n
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  // Poll the server for completion; ease a progress bar toward the current stage.
+  // Poll the server for completion; stop on any terminal status or after 8 min.
   useEffect(() => {
-    if (status === "done" || status === "rejected" || status === "needs_review") return;
-    const t = setInterval(() => router.refresh(), 3000);
+    const TERMINAL = ["done", "failed", "rejected", "needs_review"];
+    if (TERMINAL.includes(status)) return;
+    let elapsed = 0;
+    const t = setInterval(() => {
+      elapsed += 3000;
+      if (elapsed >= 8 * 60 * 1000) { clearInterval(t); return; }
+      router.refresh();
+    }, 3000);
     return () => clearInterval(t);
   }, [status, stage, router]);
 
@@ -42,22 +48,25 @@ export function Analyzing({ status, stage }: { status: string; stage: string | n
     return () => clearInterval(t);
   }, []);
 
-  if (status === "rejected" || status === "needs_review") {
+  if (status === "failed" || status === "rejected" || status === "needs_review") {
     const review = status === "needs_review";
+    const failed = status === "failed";
     return (
       <main className="frame">
         <header><Brand /></header>
         <div style={{ marginTop: 80, textAlign: "center" }}>
           <h1 className="serif" style={{ fontSize: 24 }}>
-            {review ? "Your song is in manual review" : "We couldn't analyze this track"}
+            {review ? "Your song is in manual review" : failed ? "Analysis failed" : "We couldn't analyze this track"}
           </h1>
           <p style={{ color: "var(--muted)", marginTop: 8 }}>
             {review
               ? "This one needs a human look before we deliver a grade. No charge yet — we'll email you when it's ready."
+              : failed
+              ? "Something went wrong on our end — no credit was used. Please try again, and reach out if it keeps happening."
               : "The upload was rejected. No credit was used. Try a different file you own."}
           </p>
           <Link href="/upload" className="btn-ghost" style={{ marginTop: 18, display: "inline-block", maxWidth: 260 }}>
-            Back to upload
+            {failed ? "Try again →" : "Back to upload"}
           </Link>
         </div>
       </main>

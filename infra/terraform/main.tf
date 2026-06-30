@@ -442,7 +442,7 @@ resource "aws_iam_role_policy" "lambda_step_permissions" {
 
 # ── Step Lambda helper: local vars for all steps ──────────────────────────────
 locals {
-  step_names = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review"]
+  step_names = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review", "fail"]
 
   # Common env vars injected into every step Lambda
   step_env = {
@@ -838,6 +838,7 @@ resource "aws_sfn_state_machine" "analyze" {
     deliver_fn_arn     = aws_lambda_function.step["deliver"].arn
     reject_fn_arn      = aws_lambda_function.step["reject"].arn
     review_fn_arn      = aws_lambda_function.step["review"].arn
+    fail_fn_arn        = aws_lambda_function.step["fail"].arn
 
     # Lambda worker (warm-container path -- replaces the Fargate waitForTaskToken).
     # The Fargate ECS task definition / ECR repo remain unchanged as a revertible
