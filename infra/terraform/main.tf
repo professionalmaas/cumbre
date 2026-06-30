@@ -505,9 +505,10 @@ resource "aws_lambda_function" "step" {
   timeout     = 60
   memory_size = 512
 
-  # Reserve capacity so step functions can never be starved by the worker Lambda
-  # or any other account-level spike. 10 per step × 8 steps = 80 reserved total.
-  reserved_concurrent_executions = 10
+  # Account concurrency limit is 10 total — reservation disabled until limit increase
+  # is approved (Service Quotas → Lambda → Concurrent executions → request 1000).
+  # Re-enable (10/step) after increase lands.
+  reserved_concurrent_executions = -1
 
   vpc_config {
     subnet_ids         = local.s.private_subnet_ids
@@ -1176,9 +1177,9 @@ resource "aws_lambda_function" "worker_lambda" {
   # Lambda max timeout = 15 min (same as the Fargate task's 900 s timeout).
   timeout = 900
 
-  # Reserve capacity: 30 concurrent workers max. Prevents account-level Lambda quota
-  # exhaustion and caps worst-case Fargate-equivalent cost under a traffic spike.
-  reserved_concurrent_executions = 30
+  # Reservation disabled until account concurrency limit is raised from 10 to 1000.
+  # Re-enable (30) after Service Quotas increase is approved.
+  reserved_concurrent_executions = -1
 
   ephemeral_storage {
     # /tmp: 4 GB for audio download + numba temp files
