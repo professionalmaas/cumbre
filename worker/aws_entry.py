@@ -118,9 +118,9 @@ def run() -> dict:
                 x = np.array([[float(mv.get(f, 0.0)) for f in feats]])
                 proba = float(art["best_model"].predict_proba(x)[0, 1])
                 thr = art.get("best_f1_threshold", 0.5)
-                model_version = art.get("trained_at")
-                fameblind = {"score": round(proba, 4), "threshold": thr,
-                             "above_threshold": proba >= thr}
+                model_version = str(art.get("trained_at", "")) or None
+                fameblind = {"score": round(proba, 4), "threshold": float(thr),
+                             "above_threshold": bool(proba >= thr)}
                 os.remove(mp)
             except Exception as e:  # noqa: BLE001
                 fameblind = {"error": str(e)[:200]}  # internal-only; report still returns
