@@ -1141,7 +1141,7 @@ resource "aws_lambda_function" "worker_lambda" {
   # Lambda doesn't accept multi-arch OCI index tags; must reference a single-arch manifest.
   # Use the specific amd64 digest extracted from the OCI index (:latest).
   # Update this digest after each image rebuild (see docs/AWS_RUNBOOK.md).
-  image_uri = "${aws_ecr_repository.worker_lambda.repository_url}@sha256:4ec3910c3f12d25e954ec38853b5f1f4a1cd7b13f4e850a37cc86f39a155605f"
+  image_uri = "${aws_ecr_repository.worker_lambda.repository_url}@sha256:2dbba0c661f43f95689055a66f87dc61b3256f04d891ca9bf4f906310bf08ddc"
 
   # 3008 MB = standard AWS Lambda quota ceiling (requires quota increase for higher).
   # Sufficient for librosa/numba/sklearn; ephemeral_storage gives 4 GB /tmp for audio.
