@@ -6,7 +6,7 @@ aws_region  = "us-east-1"
 environment = "prd"
 
 # ── Routing ───────────────────────────────────────────────────────────────────
-host_header = "cumbre.certuspest.com"
+host_header = "getcumbre.com"
 
 # ── GitHub ────────────────────────────────────────────────────────────────────
 github_repo        = "professionalmaas/cumbre"

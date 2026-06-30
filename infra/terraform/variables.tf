@@ -183,7 +183,7 @@ variable "kill_switch_scoring" {
 
 variable "low_confidence_threshold" {
   type    = string
-  default = "0.7"
+  default = "0.0"
 }
 
 # ── RDS ───────────────────────────────────────────────────────────────────────

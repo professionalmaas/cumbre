@@ -27,6 +27,7 @@ import tempfile
 import boto3
 
 REGION = os.environ.get("AWS_REGION", "us-east-1")
+PKL_CACHE = "/tmp/fameblind_model.pkl"
 ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
 
 
@@ -53,6 +54,11 @@ def _download(s3, bucket: str, key: str, suffix: str) -> str:
     os.close(fd)
     s3.download_file(bucket, key, path)
     return path
+
+
+def _download_to(s3, bucket: str, key: str, dest: str) -> str:
+    s3.download_file(bucket, key, dest)
+    return dest
 
 
 def _parse_model_loc() -> tuple[str, str] | None:
@@ -95,33 +101,53 @@ def run() -> dict:
         if not v.get("ok"):
             return {"ok": False, "reason": v.get("reason", "invalid"), "validate": v}
 
-        # Full RICH report matching docs/analysis-contract.json (engine + MIR + A&R).
-        report = cr.build_report(audio, genre, depth, lens, year)
+        import concurrent.futures
+
+        loc = _parse_model_loc()
+
+        # Run build_report + analyze_song in parallel to cut wall time.
+        def _build_report():
+            return cr.build_report(audio, genre, depth, lens, year)
+
+        def _analyze():
+            if not loc:
+                return None
+            import cumbre_scoring as cs  # noqa: E402
+            return cs.analyze_song(audio, genre, year=year)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            f_report = pool.submit(_build_report)
+            f_scoring = pool.submit(_analyze)
+            report = f_report.result()
+            scoring_out = f_scoring.result()
 
         # Fame-blind model score (internal only — never surfaced as "hit probability").
         # Optional/secondary: its absence must never break the report.
         model_version = None
         fameblind = None
-        loc = _parse_model_loc()
-        if loc:
+        if loc and scoring_out is not None:
             try:
                 import pickle
                 import numpy as np
 
-                import cumbre_scoring as cs  # noqa: E402
+                # Use /tmp cache so warm Lambda invocations skip S3 download.
+                if os.path.exists(PKL_CACHE):
+                    mp = PKL_CACHE
+                    own_mp = False
+                else:
+                    _download_to(s3, loc[0], loc[1], PKL_CACHE)
+                    mp = PKL_CACHE
+                    own_mp = False  # keep in cache; don't remove
 
-                out = cs.analyze_song(audio, genre, year=year)
-                mp = _download(s3, loc[0], loc[1], ".pkl")
                 art = pickle.load(open(mp, "rb"))
                 feats = art.get("features") or art.get("required_vars") or []
-                mv = out.get("model_vector", {})
+                mv = scoring_out.get("model_vector", {})
                 x = np.array([[float(mv.get(f, 0.0)) for f in feats]])
                 proba = float(art["best_model"].predict_proba(x)[0, 1])
-                thr = art.get("best_f1_threshold", 0.5)
-                model_version = art.get("trained_at")
+                thr = float(art.get("best_f1_threshold", 0.5))
+                model_version = str(art.get("trained_at", "")) or None
                 fameblind = {"score": round(proba, 4), "threshold": thr,
-                             "above_threshold": proba >= thr}
-                os.remove(mp)
+                             "above_threshold": bool(proba >= thr)}
             except Exception as e:  # noqa: BLE001
                 fameblind = {"error": str(e)[:200]}  # internal-only; report still returns
 
