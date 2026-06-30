@@ -238,9 +238,10 @@ resource "aws_db_instance" "cumbre" {
   identifier        = "${local.prefix}-db"
   engine            = "postgres"
   engine_version    = "16"
-  instance_class    = "db.t4g.micro"
-  allocated_storage = 20
-  storage_type      = "gp3"
+  instance_class        = "db.t4g.small"
+  allocated_storage     = 20
+  max_allocated_storage = 100
+  storage_type          = "gp3"
 
   db_name  = "cumbre"
   username = var.db_master_username
@@ -264,8 +265,8 @@ resource "aws_db_instance" "cumbre" {
   backup_window             = "03:00-04:00"
   maintenance_window        = "Mon:04:00-Mon:05:00"
 
-  # No Multi-AZ in Phase 1 (cost vs HA trade-off — see AWS_ARCHITECTURE.md deferred list)
-  multi_az = false
+  # Multi-AZ standby: synchronous replication to a second AZ; automatic failover < 2 min.
+  multi_az = true
 
   # Performance Insights (free tier)
   performance_insights_enabled = true
@@ -320,7 +321,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     id     = "expire-audio"
     status = "Enabled"
     filter { prefix = "" }
-    expiration { days = 1 }
+    expiration { days = 3 }
   }
 }
 
@@ -489,6 +490,10 @@ resource "aws_lambda_function" "step" {
 
   timeout     = 60
   memory_size = 512
+
+  # Reserve capacity so step functions can never be starved by the worker Lambda
+  # or any other account-level spike. 10 per step × 8 steps = 80 reserved total.
+  reserved_concurrent_executions = 10
 
   vpc_config {
     subnet_ids         = local.s.private_subnet_ids
@@ -852,8 +857,8 @@ resource "aws_sfn_state_machine" "analyze" {
 
   logging_configuration {
     log_destination        = "${aws_cloudwatch_log_group.sfn.arn}:*"
-    include_execution_data = false
-    level                  = "ERROR"
+    include_execution_data = true
+    level                  = "ALL"
   }
 
   tracing_configuration {
@@ -890,7 +895,7 @@ module "app" {
   # downtime for non-US users. Keep min_tasks running 24/7 (base=1 on-demand in the module).
   enable_schedule_scaling = false
   min_tasks               = 1
-  max_tasks               = 4
+  max_tasks               = 16
 
   # ── CI/CD ────────────────────────────────────────────────────────────────────
   github_repo        = var.github_repo
@@ -1149,6 +1154,10 @@ resource "aws_lambda_function" "worker_lambda" {
 
   # Lambda max timeout = 15 min (same as the Fargate task's 900 s timeout).
   timeout = 900
+
+  # Reserve capacity: 30 concurrent workers max. Prevents account-level Lambda quota
+  # exhaustion and caps worst-case Fargate-equivalent cost under a traffic spike.
+  reserved_concurrent_executions = 30
 
   ephemeral_storage {
     # /tmp: 4 GB for audio download + numba temp files

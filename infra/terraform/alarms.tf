@@ -162,3 +162,23 @@ resource "aws_cloudwatch_metric_alarm" "rds_freeable_memory" {
 
   alarm_actions = [local.s.sns_alerts_arn]
 }
+
+# ── Step Functions — concurrency throttle ─────────────────────────────────────
+resource "aws_cloudwatch_metric_alarm" "sfn_throttled" {
+  alarm_name          = "${local.prefix}-sfn-executions-throttled"
+  alarm_description   = "SFN executions throttled — state machine overloaded or StartExecution rate exceeded"
+  namespace           = "AWS/States"
+  metric_name         = "ExecutionsThrottled"
+  statistic           = "Sum"
+  period              = 300
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = 1
+  evaluation_periods  = 1
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    StateMachineArn = aws_sfn_state_machine.analyze.arn
+  }
+
+  alarm_actions = [local.s.sns_alerts_arn]
+}
