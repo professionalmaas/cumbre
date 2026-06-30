@@ -11,7 +11,7 @@ export default async function UploadPage() {
   const user = await getUser();
   if (!user) redirect("/login");
 
-  const ent = await getEntitlement(user.sub);
+  const ent = await getEntitlement(user.sub, user.email ?? undefined);
   if (!ent.hasAccess) redirect("/plans");
 
   return (

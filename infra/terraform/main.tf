@@ -226,6 +226,12 @@ resource "aws_security_group" "rds" {
   }
 
   tags = { Name = "${local.prefix}-rds-sg" }
+
+  # Prevent Terraform from fighting with aws_security_group_rule resources.
+  # All ingress/egress changes go through separate aws_security_group_rule.
+  lifecycle {
+    ignore_changes = [ingress, egress]
+  }
 }
 
 resource "aws_db_instance" "cumbre" {
@@ -1131,13 +1137,14 @@ resource "aws_lambda_function" "worker_lambda" {
   role          = aws_iam_role.worker_lambda.arn
   package_type  = "Image"
 
-  # image_uri references the ECR repo; :latest is updated by CI on each push.
-  # On first deploy, push the image before running terraform apply.
-  image_uri = "${aws_ecr_repository.worker_lambda.repository_url}:latest"
+  # Lambda doesn't accept multi-arch OCI index tags; must reference a single-arch manifest.
+  # Use the specific amd64 digest extracted from the OCI index (:latest).
+  # Update this digest after each image rebuild (see docs/AWS_RUNBOOK.md).
+  image_uri = "${aws_ecr_repository.worker_lambda.repository_url}@sha256:a6b42222f2c417d4cfe7fcfe43554e2019806ffef3572a502b85921b23c60c79"
 
-  # 10 GB memory (closest Lambda max to the 4 GB Fargate task; gives librosa/numba
-  # plenty of headroom and also maximises the 2-vCPU equivalent allocation).
-  memory_size = 10240
+  # 3008 MB = standard AWS Lambda quota ceiling (requires quota increase for higher).
+  # Sufficient for librosa/numba/sklearn; ephemeral_storage gives 4 GB /tmp for audio.
+  memory_size = 3008
 
   # Lambda max timeout = 15 min (same as the Fargate task's 900 s timeout).
   timeout = 900
@@ -1167,7 +1174,7 @@ resource "aws_lambda_function" "worker_lambda" {
       NUMBA_CACHE_DIR = "/opt/numba_cache"
       HOME            = "/tmp"
       MPLCONFIGDIR    = "/tmp"
-      AWS_REGION      = var.aws_region
+      # AWS_REGION is reserved by Lambda and cannot be overridden — removed.
     }
   }
 

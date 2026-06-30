@@ -38,7 +38,7 @@ export async function prepareUpload(
   const contentType = ALLOWED_EXT[ext];
   if (!contentType) return { ok: false, error: `Unsupported file type .${ext}` };
 
-  if (!(await getEntitlement(user.sub)).hasAccess) return { ok: false, error: "no_access" };
+  if (!(await getEntitlement(user.sub, user.email ?? undefined)).hasAccess) return { ok: false, error: "no_access" };
 
   const songId = randomUUID();
   const storageKey = `${user.sub}/${songId}.${ext}`;
@@ -66,7 +66,7 @@ export async function enqueueAnalysis(
   if (!input.rightsWarranty)
     return { ok: false, error: "You must confirm you own the rights to this song." };
 
-  const ent = await getEntitlement(user.sub);
+  const ent = await getEntitlement(user.sub, user.email ?? undefined);
   if (!ent.hasAccess) return { ok: false, error: "no_access" };
 
   if (!(await objectExists(input.storageKey))) return { ok: false, error: "Upload not found in storage." };
