@@ -51,6 +51,52 @@ export interface ReviewRow {
   created_at: string;
 }
 
+// Enhanced review row returned by listOpenReviewsEnhanced — includes job + song context.
+export interface ReviewRowEnhanced extends ReviewRow {
+  priority: number;
+  version: number;
+  reviewer_id: string | null;
+  claimed_at: string | null;
+  decided_at: string | null;
+  decision_note: string | null;
+  flag_signals: unknown;
+  // from jobs join
+  job_status: string;
+  confidence: number | null;
+  flagged_reason: string | null;
+  // from songs join (may be null if song deleted)
+  original_filename: string | null;
+  genre: Genre | null;
+}
+
+export interface JobTransition {
+  id: string;
+  job_id: string;
+  from_state: string | null;
+  to_state: string;
+  actor_type: string;
+  actor_id: string | null;
+  step_name: string | null;
+  metadata: unknown;
+  most_recent: boolean;
+  sort_key: number;
+  created_at: string;
+}
+
+export interface QueueCounter {
+  key: string;
+  value: number;
+  updated_at: string;
+}
+
+// Admin dashboard time-series point (from mv_jobs_by_day or direct query)
+export interface JobsByDayPoint {
+  day: string;
+  done: number;
+  failed: number;
+  total: number;
+}
+
 // --- Engine report shape (subset we render; see docs/sample_report.json) ---
 
 export interface EngineReport {

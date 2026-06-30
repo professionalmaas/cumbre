@@ -28,9 +28,8 @@ from concurrent.futures import ThreadPoolExecutor
 import boto3
 
 REGION = os.environ.get("AWS_REGION", "us-east-1")
-ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
-
 PKL_CACHE = "/tmp/fameblind_model.pkl"
+ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
 
 
 def _log(level: str, event: str, **fields) -> None:
@@ -115,8 +114,6 @@ def run() -> dict:
                 return None
             return cs.analyze_song(audio, genre, year=year)
 
-        report = None
-        score_out = None
         with ThreadPoolExecutor(max_workers=2) as pool:
             r_fut = pool.submit(_build)
             s_fut = pool.submit(_score)
@@ -127,7 +124,7 @@ def run() -> dict:
         # Optional/secondary: its absence must never break the report.
         model_version = None
         fameblind = None
-        if loc:
+        if loc and score_out is not None:
             try:
                 import pickle
                 import numpy as np
@@ -136,10 +133,9 @@ def run() -> dict:
                 if not os.path.exists(mp):
                     _download_to(s3, loc[0], loc[1], mp)
 
-                out = score_out  # already computed in parallel above
                 art = pickle.load(open(mp, "rb"))
                 feats = art.get("features") or art.get("required_vars") or []
-                mv = out.get("model_vector", {}) if out else {}
+                mv = score_out.get("model_vector", {})
                 x = np.array([[float(mv.get(f, 0.0)) for f in feats]])
                 proba = float(art["best_model"].predict_proba(x)[0, 1])
                 thr = art.get("best_f1_threshold", 0.5)

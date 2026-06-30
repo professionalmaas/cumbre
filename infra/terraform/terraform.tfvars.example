@@ -6,14 +6,14 @@ aws_region  = "us-east-1"
 environment = "prd"
 
 # ── Routing ───────────────────────────────────────────────────────────────────
-host_header = "cumbre.certuspest.com"
+host_header = "getcumbre.com"   # CRITICAL: controls ALB routing + Cognito callbacks + S3 CORS — wrong value = auth broken sitewide
 
 # ── GitHub ────────────────────────────────────────────────────────────────────
 github_repo        = "professionalmaas/cumbre"
 github_environment = "prd"
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
-admin_email        = "you@certuspest.com"
+admin_email        = "you@example.com"
 monthly_budget_usd = 200
 
 # ── Shared remote state ────────────────────────────────────────────────────────
@@ -21,13 +21,13 @@ shared_state_bucket = "certus-terraform-state-123456789012"
 shared_state_key    = "shared/prd/terraform.tfstate"
 
 # ── Cognito ───────────────────────────────────────────────────────────────────
-cognito_domain_prefix = "certus-cumbre-prd"
+cognito_domain_prefix = "getcumbre-prd"
 
 # ── Route53 ───────────────────────────────────────────────────────────────────
 route53_zone_id = ""   # set to hosted zone ID to auto-create DNS A record
 
 # ── App config ────────────────────────────────────────────────────────────────
-admin_emails             = "admin@certuspest.com"
+admin_emails             = "you@example.com"
 kill_switch_scoring      = "off"
 low_confidence_threshold = "0.0"
 db_master_username       = "cumbre"

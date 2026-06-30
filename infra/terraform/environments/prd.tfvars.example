@@ -1,31 +1,42 @@
-# certus-cumbre-prd — production tfvars
-# Copy this to terraform.tfvars and fill in EVERY value marked REQUIRED.
-# Never commit real secrets to git.
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  TEMPLATE ONLY — do NOT pass this file to terraform apply directly.         ║
+# ║                                                                              ║
+# ║  CORRECT workflow (from infra/terraform/):                                   ║
+# ║    terraform plan                                                            ║
+# ║    terraform apply -auto-approve                                             ║
+# ║                                                                              ║
+# ║  Terraform auto-loads terraform.tfvars (gitignored, has real values).        ║
+# ║  Passing -var-file=...prd.tfvars.example OVERRIDES real values with          ║
+# ║  placeholders and WILL break auth, routing, and state lookups.               ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# Fresh-environment setup: copy to terraform.tfvars, fill every REQUIRED value.
 
 aws_region  = "us-east-1"
 environment = "prd"
 
 # ── Routing ───────────────────────────────────────────────────────────────────
-host_header = "cumbre.certuspest.com"
+# CRITICAL: controls ALB listener rule AND Cognito callback/logout URLs.
+# Wrong value = auth broken sitewide (redirect_mismatch on every sign-in).
+host_header = "getcumbre.com"
 
 # ── GitHub ────────────────────────────────────────────────────────────────────
 github_repo        = "professionalmaas/cumbre"
 github_environment = "prd"
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
-admin_email        = "REQUIRED — your-email@certuspest.com"
+admin_email        = "REQUIRED — your-email@example.com"
 monthly_budget_usd = 200
 
 # ── Shared remote state ────────────────────────────────────────────────────────
-# Replace ACCOUNT_ID_PLACEHOLDER with your 12-digit AWS account ID.
-shared_state_bucket = "hub-terraform-state-110844251073"
+# Replace ACCOUNT_ID with your 12-digit AWS account ID.
+shared_state_bucket = "hub-terraform-state-ACCOUNT_ID"
 shared_state_key    = "hub-prd/shared/terraform.tfstate"
 
 # ── Cognito ───────────────────────────────────────────────────────────────────
-# Must be globally unique. If "certus-cumbre-prd" is taken, add a suffix.
-cognito_domain_prefix = "certus-cumbre-prd"
+cognito_domain_prefix = "getcumbre-prd"
 
-# ── Route53 (optional — leave "" if managing DNS manually) ───────────────────
+# ── Route53 (optional) ───────────────────────────────────────────────────────
 route53_zone_id = ""
 
 # ── App config (non-secret) ───────────────────────────────────────────────────
@@ -36,22 +47,19 @@ low_confidence_threshold = "0.0"
 # ── Database ──────────────────────────────────────────────────────────────────
 db_master_username = "cumbre"
 
-# ── Stripe pass price IDs ─────────────────────────────────────────────────────
-stripe_price_summit = "REQUIRED — price_XXXX" # Summit pass (pay-per-song)
-stripe_price_season = "REQUIRED — price_XXXX" # Season pass (subscription credits)
+# ── Stripe ───────────────────────────────────────────────────────────────────
+stripe_price_summit = "REQUIRED — price_XXXX"
+stripe_price_season = "REQUIRED — price_XXXX"
 
 # ── ACRCloud ─────────────────────────────────────────────────────────────────
 acrcloud_host = "REQUIRED — identify-eu-west-1.acrcloud.com"
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SECRETS — provide via environment variables or a secrets-only tfvars file
-# that is NOT committed to git (add to .gitignore).
-# Example: TF_VAR_session_secret="..." terraform apply
-# ─────────────────────────────────────────────────────────────────────────────
+# ── SECRETS (never commit — provide in terraform.tfvars or TF_VAR_* env) ──────
 # session_secret          = "REQUIRED — 32+ random chars"
 # stripe_secret_key       = "REQUIRED — sk_live_..."
 # stripe_webhook_secret   = "REQUIRED — whsec_..."
 # openai_api_key          = "REQUIRED — sk-..."
-# anthropic_api_key       = "REQUIRED — sk-ant-..."
 # acrcloud_access_key     = "REQUIRED"
 # acrcloud_access_secret  = "REQUIRED"
+# cognito_client_secret   = "REQUIRED"
+# database_url            = "REQUIRED — postgres://..."

@@ -1,6 +1,6 @@
 # Cumbre — AWS Launch & Rollback Runbook
 
-Prefix: `certus-cumbre-prd`
+Prefix: `hub-cumbre-prd`
 Region: `us-east-1`
 Shared platform repo: `professionalmaas/home` branch `PRD`
 
@@ -180,9 +180,9 @@ Manager connected to a host in the same VPC. Never route RDS traffic through a p
 To get the DB password from Terraform state:
 ```bash
 terraform output -raw db_endpoint   # confirms the endpoint is ready
-# Password is in the Secrets Manager secret certus-cumbre-prd/secrets as DATABASE_URL
+# Password is in the Secrets Manager secret hub-cumbre-prd/secrets as DATABASE_URL
 aws secretsmanager get-secret-value \
-  --secret-id certus-cumbre-prd/secrets \
+  --secret-id hub-cumbre-prd/secrets \
   --query SecretString --output text | python3 -c \
   "import sys,json; u=json.load(sys.stdin)['DATABASE_URL']; print(u)"
 ```
@@ -225,8 +225,8 @@ Trigger `deploy.yml` via GitHub Actions:
 Actions → Deploy → Run workflow → branch: PRD
 ```
 
-This builds the Next.js standalone image, pushes to ECR `certus-cumbre-prd`, and deploys
-to ECS. The smoke test hits `https://cumbre.certuspest.com/api/health`.
+This builds the Next.js standalone image, pushes to ECR `hub-cumbre-prd`, and deploys
+to ECS. The smoke test hits `https://getcumbre.com/api/health`.
 
 First run: ECR is empty until this workflow completes. The ECS service may show
 "unable to pull image" until the first push succeeds — this is normal.
@@ -240,7 +240,7 @@ Alternatively:
 
 ```bash
 ACCT=$(aws sts get-caller-identity --query Account --output text)
-WORKER_ECR="${ACCT}.dkr.ecr.us-east-1.amazonaws.com/certus-cumbre-prd-worker"
+WORKER_ECR="${ACCT}.dkr.ecr.us-east-1.amazonaws.com/hub-cumbre-prd-worker"
 
 aws ecr get-login-password --region us-east-1 | \
   docker login --username AWS --password-stdin "${ACCT}.dkr.ecr.us-east-1.amazonaws.com"
@@ -257,10 +257,10 @@ If `route53_zone_id` is set in tfvars, Terraform already created the A record.
 
 If managing DNS manually, create a CNAME:
 ```
-cumbre.certuspest.com → <ALB DNS name from terraform output alb_dns_name or shared state>
+getcumbre.com → <ALB DNS name from terraform output alb_dns_name or shared state>
 ```
 
-ACM certificate for `cumbre.certuspest.com` must be validated in ACM and attached to
+ACM certificate for `getcumbre.com` must be validated in ACM and attached to
 the ALB HTTPS listener (TODO: this is a shared-layer concern — confirm the cert covers
 the Cumbre hostname or add a SANs extension).
 
@@ -269,13 +269,13 @@ the Cumbre hostname or add a SANs extension).
 ## Step 13 — Smoke test
 
 ```bash
-curl -I https://cumbre.certuspest.com/api/health
+curl -I https://getcumbre.com/api/health
 # Expect: HTTP/2 200
 ```
 
 Also test the auth flow manually:
-1. Navigate to `https://cumbre.certuspest.com/login`
-2. Should redirect to Cognito hosted UI (`https://certus-cumbre-prd.auth.us-east-1.amazoncognito.com/...`)
+1. Navigate to `https://getcumbre.com/login`
+2. Should redirect to Cognito hosted UI (`https://getcumbre-prd.auth.us-east-1.amazoncognito.com/...`)
 3. Sign up with a test email, complete email verification
 4. Should redirect back to `/auth/callback` and set session cookie
 
@@ -288,10 +288,10 @@ Run the prod-launch-auditor checklist:
 - Smoke test: YES (health_url set in deploy.yml)
 - Graceful shutdown: YES (deregistration_delay=30, stopTimeout=60 in module)
 - Health route: YES (`/api/health` must return 200)
-- Dashboard: YES (module creates `certus-cumbre-prd` CloudWatch dashboard)
+- Dashboard: YES (module creates `hub-cumbre-prd` CloudWatch dashboard)
 - JSON logs: VERIFY (app must write structured JSON to stdout)
 - Pinned base image: VERIFY (`node:20-alpine` — add `--platform linux/amd64` if on M1)
-- Secrets in SM only: YES (all secrets in `certus-cumbre-prd/secrets`)
+- Secrets in SM only: YES (all secrets in `hub-cumbre-prd/secrets`)
 
 ---
 
@@ -304,20 +304,20 @@ To flip it without a deploy, update the task definition and force a new deployme
 # 1. Get current task definition
 TASK_DEF=$(aws ecs describe-services \
   --cluster certus-prd \
-  --services certus-cumbre-prd \
+  --services hub-cumbre-prd \
   --query 'services[0].taskDefinition' \
   --output text)
 
 # 2. Register a new task definition revision with KILL_SWITCH_SCORING=on
 # (use the console or a JSON override — fastest path is the console)
-# AWS Console → ECS → Task Definitions → certus-cumbre-prd → Create new revision
+# AWS Console → ECS → Task Definitions → hub-cumbre-prd → Create new revision
 # → find KILL_SWITCH_SCORING env var → change to "on" → Create
 
 # 3. Update the service to the new revision
 aws ecs update-service \
   --cluster certus-prd \
-  --service certus-cumbre-prd \
-  --task-definition certus-cumbre-prd:<NEW_REVISION> \
+  --service hub-cumbre-prd \
+  --task-definition hub-cumbre-prd:<NEW_REVISION> \
   --force-new-deployment
 ```
 
@@ -338,7 +338,7 @@ at the review queue).
 To verify:
 ```bash
 aws s3api get-bucket-lifecycle-configuration \
-  --bucket certus-cumbre-prd-uploads-<ACCT>
+  --bucket hub-cumbre-prd-uploads-<ACCT>
 ```
 
 ---
@@ -350,29 +350,29 @@ To manually roll back to a specific image:
 
 ```bash
 # Find the previous image SHA in ECR
-aws ecr list-images --repository-name certus-cumbre-prd \
+aws ecr list-images --repository-name hub-cumbre-prd \
   --query 'imageIds[*].imageTag' --output text
 
 # Retag that SHA as latest
 OLD_SHA=abc1234  # previous good SHA
 REGISTRY=$(aws ecr describe-repositories \
-  --repository-names certus-cumbre-prd \
+  --repository-names hub-cumbre-prd \
   --query 'repositories[0].repositoryUri' --output text)
 
 MANIFEST=$(aws ecr batch-get-image \
-  --repository-name certus-cumbre-prd \
+  --repository-name hub-cumbre-prd \
   --image-ids imageTag=${OLD_SHA} \
   --query 'images[0].imageManifest' --output text)
 
 aws ecr put-image \
-  --repository-name certus-cumbre-prd \
+  --repository-name hub-cumbre-prd \
   --image-tag latest \
   --image-manifest "${MANIFEST}"
 
 # Force new deployment
 aws ecs update-service \
   --cluster certus-prd \
-  --service certus-cumbre-prd \
+  --service hub-cumbre-prd \
   --force-new-deployment
 ```
 
@@ -398,15 +398,15 @@ To destroy for real: set `deletion_protection = false` in tfvars, apply, then de
 
 ## Monitoring
 
-CloudWatch dashboard: `certus-cumbre-prd`
+CloudWatch dashboard: `hub-cumbre-prd`
 - ALB request rate, 5xx count, p95 latency
 - ECS CPU/memory
 - Running task count (alarm fires if 0)
 
-Step Functions: AWS Console → Step Functions → `certus-cumbre-prd-analyze`
+Step Functions: AWS Console → Step Functions → `hub-cumbre-prd-analyze`
 - Execution history, failed executions, task tokens timing out
 
-Lambda metrics: `/aws/lambda/certus-cumbre-prd-<step>` log groups
+Lambda metrics: `/aws/lambda/hub-cumbre-prd-<step>` log groups
 
 SNS alerts: `certus-prd-alerts` topic (from shared layer) → your admin email
 
@@ -419,7 +419,7 @@ SNS alerts: `certus-prd-alerts` topic (from shared layer) → your admin email
 | ECS service stuck at 0/1 tasks | ECR image exists? First push done? |
 | Health check failing | `/api/health` returns 200? HOSTNAME=0.0.0.0? |
 | Cognito redirect loop | `COGNITO_ISSUER` env var correct? Client ID matches? |
-| Worker task exits immediately | CloudWatch `/ecs/certus-cumbre-prd-worker` logs; TASK_TOKEN present? |
+| Worker task exits immediately | CloudWatch `/ecs/hub-cumbre-prd-worker` logs; TASK_TOKEN present? |
 | Step Lambda timeout | Check RDS SG rules; Lambda VPC config; DB endpoint reachable? |
 | Charge Lambda charging twice | Verify unique index on `credit_ledger(job_id)` where reason='analysis' |
 | Budget alarm firing | Check AWS Cost Explorer → Group by Tag → Team=certus; scale down or optimize |

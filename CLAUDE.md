@@ -18,13 +18,13 @@ pay-per-song + subscription credits. Tagline: **Get your song to the summit.**
 
 ## Repository layout (everything you need is here)
 ```
-ml/        Python engine + fame-blind training pipeline (owned, tested)
-worker/    modal_app.py — Modal worker that wraps ml/ and loads the trained model
-supabase/  schema.sql — the DB contract (apply in Supabase)
-lib/inngest/ analyze-song.ts — the automated-loop skeleton (human-gate order)
-web/       Next.js app — you scaffold this (see docs/PHASE1_CHECKLIST.md)
-docs/      Cumbre_Build_Spec.md (SOURCE OF TRUTH), PHASE1_CHECKLIST.md, design brief, prototype
-.env.example  CLAUDE.md  SETUP.md  README.md
+ml/              Python engine + fame-blind training pipeline (owned, tested)
+worker/          aws_entry.py — Fargate worker (wraps ml/, reads model from S3)
+web/             Next.js app (App Router, standalone build for Docker)
+steps/           Step Functions Lambda steps (TypeScript, compiled to dist/)
+infra/terraform/ App-layer Terraform (ECS, ALB rule, Cognito client, S3, secrets)
+infra/terraform/Makefile  Workflow: plan / apply / validate / check-live
+docs/            AWS_ARCHITECTURE.md, AWS_RUNBOOK.md, Cumbre_Build_Spec.md
 ```
 
 ## Non-negotiable rules (do not violate)
@@ -44,6 +44,29 @@ docs/      Cumbre_Build_Spec.md (SOURCE OF TRUTH), PHASE1_CHECKLIST.md, design b
 6. **Owned ML only.** Use `ml/CUMBRE_fameblind_model.pkl` (+ optional `ml/cumbre_audionet.pt`).
    No AGPL/non-commercial weights (no Essentia pretrained models, no MERT). librosa/torch/sklearn ok.
 
+## Terraform rules (MANDATORY — one wrong apply breaks auth sitewide)
+
+`terraform.tfvars` (gitignored) is the **ONLY** apply-time config file. It is auto-loaded.
+
+```sh
+# CORRECT — always run from infra/terraform/
+cd infra/terraform
+terraform plan
+terraform apply -auto-approve
+# or: make plan / make apply
+```
+
+**NEVER** pass `-var-file=environments/prd.tfvars.example`. It is a template with placeholder
+values. Passing it OVERRIDES the real `terraform.tfvars` — corrupting the ALB listener rule,
+the Cognito callback/logout URLs, and the shared state references. Last time this happened it
+took down auth sitewide (redirect_mismatch on every sign-in attempt).
+
+`host_header` in `terraform.tfvars` must always be `"getcumbre.com"`. It controls:
+1. ALB listener routing (wrong value = 404 on every request)
+2. Cognito callback + logout URLs (wrong value = auth broken for all users)
+
+The `make validate` target in `infra/terraform/Makefile` checks this before applying.
+
 ## Git guardrails (installed — standalone repo, branch `PRD`)
 This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks live in
 `.githooks/` and are armed into `.git/hooks/`. Re-arm after a fresh clone:
@@ -52,8 +75,9 @@ This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks li
   blocks junk/`.claude/` files · advisory secret scan (AWS/Anthropic/Stripe/PEM). Overrides:
   `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_JUNK=YES`, `STRICT_SECRETS=1` (make scan blocking).
 - **pre-push**: blocks pushes to `main`/`master` and force-pushes · **BUILD-GREEN gate** —
-  typechecks `web/` + `steps/` (`tsc --noEmit`) and refuses to push broken TypeScript (CI runs
-  the full build). Overrides: `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_FORCE=YES`, `SKIP_BUILD_CHECK=1`.
+  typechecks `web/` + `steps/` (`tsc --noEmit`) · **TF VAR guard** — if `.tf` files changed,
+  verifies `terraform.tfvars host_header="getcumbre.com"` (wrong value = auth broken sitewide).
+  Overrides: `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_FORCE=YES`, `SKIP_BUILD_CHECK=1`, `SKIP_TF_CHECK=1`.
 - Safe config set: `push.default=current`, `push.autoSetupRemote=true`, `pull.ff=only`.
 - Pushes use the user's credentials and must be run by the user (the agent cannot push). Copyrighted
   demo clips (`web/public/samples/*.mp3`) and secrets (`.env*`, `*.tfvars`, `*.pkl`) are gitignored.
@@ -67,21 +91,21 @@ This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks li
   `import_spotify_csv.py` → offline fame-blind training → produces `CUMBRE_fameblind_model.pkl`.
 - Tests: `ml/test_cumbre.py` (38) + `ml/test_inhouse.py`. Keep green.
 
-## Stack
-Next.js (App Router) on Vercel · Supabase (Postgres+Auth+Storage+RLS) · Stripe Checkout + Postgres
-credit ledger · Inngest durable workflow · Modal Python worker (`worker/modal_app.py`) · OpenAI
-moderation · ACRCloud fingerprint · cheap LLM for lyric feedback.
+## Stack (LIVE — AWS-native)
+Next.js (App Router, ECS Fargate) · Cognito (OAuth + Google) · RDS Postgres · S3 (presigned PUT
+browser uploads) · Step Functions (analysis loop) · Lambda steps + Fargate worker · Stripe
+Checkout + Postgres credit ledger · OpenAI moderation + Whisper · ACRCloud fingerprint · Claude
+Haiku (lyric feedback). Platform Terraform in `Projects/infra/terraform/` (shared hub); app layer
+in `infra/terraform/` (this repo). Live at `https://getcumbre.com`. AWS account: `110844251073`.
 
 ## Architecture rule that drives everything
-The audio job takes seconds-to-minutes — longer than any serverless web function. The ML work
-MUST run on the Modal worker, triggered by the Inngest loop, never inline in a Next.js route.
+The audio job takes seconds-to-minutes. The ML work MUST run in the **Fargate worker**
+(`worker/aws_entry.py`), triggered by Step Functions, never inline in a Next.js route or Lambda.
 
-## Data flow
-upload (presigned URL → Supabase Storage) → `song/uploaded` → Inngest `analyze.song`
-(`lib/inngest/analyze-song.ts`): validate → moderate → fingerprint → **extract+score on Modal**
-(`worker/modal_app.py` → `ml/cumbre_scoring.analyze_song` + the model) → feedback → **charge
-(idempotent, after success)** → deliver → capture feedback for active learning. Escalate to
-`review_queue` only for: copyright (ACRCloud BlockAccess), refunds/disputes, abuse, confidence
-< 0.70, out-of-distribution, validated drift.
-
-## Build orde
+## Data flow (LIVE)
+User uploads → S3 presigned PUT → Step Functions `hub-cumbre-prd-analysis` → Lambda steps:
+validate → moderate (OpenAI) → fingerprint (ACRCloud) → **Fargate worker** (`worker/aws_entry.py`:
+librosa features + `ml/cumbre_scoring.analyze_song` + PKL model from S3 + numpy casts) →
+feedback (Claude Haiku) → **charge** (Stripe, idempotent, after success) → deliver results.
+Confidence gate at SFN `ConfidenceChoice` (`low_confidence_threshold = 0.0` → no manual-review
+gate; set > 0.0 to enable). Results stored in RDS `jobs` table.
