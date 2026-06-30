@@ -29,7 +29,7 @@ route53_zone_id = ""   # set to hosted zone ID to auto-create DNS A record
 # ── App config ────────────────────────────────────────────────────────────────
 admin_emails             = "admin@certuspest.com"
 kill_switch_scoring      = "off"
-low_confidence_threshold = "0.7"
+low_confidence_threshold = "0.0"
 db_master_username       = "cumbre"
 
 # ── Stripe pass price IDs ─────────────────────────────────────────────────────

@@ -21,13 +21,18 @@ from __future__ import annotations
 import datetime
 import json
 import os
+import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 import boto3
 
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
+
+# Change 2: Fixed cache path for the fameblind pkl — survives across warm Lambda invocations.
+PKL_CACHE = "/tmp/fameblind_model.pkl"
 
 
 def _log(level: str, event: str, **fields) -> None:
@@ -52,6 +57,42 @@ def _download(s3, bucket: str, key: str, suffix: str) -> str:
     fd, path = tempfile.mkstemp(suffix=suffix)
     os.close(fd)
     s3.download_file(bucket, key, path)
+    return path
+
+
+def _download_to(s3, bucket: str, key: str, dest: str) -> None:
+    """Download an S3 object to a fixed destination path (for the pkl cache)."""
+    s3.download_file(bucket, key, dest)
+
+
+def _trim(path: str, max_sec: int = 90) -> str:
+    """Trim audio to max_sec seconds using ffmpeg.
+
+    Falls back to the original path silently if ffmpeg is unavailable or fails.
+    Never raises — a trim failure must not crash the worker.
+    """
+    suffix = os.path.splitext(path)[1] or ".audio"
+    try:
+        fd, trimmed = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+        result = subprocess.run(
+            ["ffmpeg", "-i", path, "-t", str(max_sec), "-y", "-loglevel", "error", trimmed],
+            check=False,
+        )
+        if result.returncode == 0 and os.path.getsize(trimmed) > 0:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+            return trimmed
+        # ffmpeg failed or produced empty file — clean up and use original
+        try:
+            os.remove(trimmed)
+        except OSError:
+            pass
+        _log("warning", "worker.trim_skipped", reason="ffmpeg_nonzero_rc", rc=result.returncode)
+    except Exception as exc:  # noqa: BLE001
+        _log("warning", "worker.trim_skipped", reason=str(exc)[:200])
     return path
 
 
@@ -85,6 +126,8 @@ def run() -> dict:
     _log("info", "worker.start", jobId=os.environ.get("JOB_ID"), s3Key=key)
 
     audio = _download(s3, upload_bucket, key, ".audio")
+    # Change 1: Trim to 90 s before analysis — biggest single latency win.
+    audio = _trim(audio, max_sec=90)
     try:
         sys.path.insert(0, ML_DIR)
         sys.path.insert(0, os.path.dirname(__file__))
@@ -95,33 +138,53 @@ def run() -> dict:
         if not v.get("ok"):
             return {"ok": False, "reason": v.get("reason", "invalid"), "validate": v}
 
+        # Change 3: Run build_report and cumbre_scoring in parallel — they are independent.
+        loc = _parse_model_loc()
+
+        import cumbre_scoring as cs  # noqa: E402
+
+        def _build():
+            return cr.build_report(audio, genre, depth, lens, year)
+
+        def _score():
+            if not loc:
+                return None
+            return cs.analyze_song(audio, genre, year=year)
+
         # Full RICH report matching docs/analysis-contract.json (engine + MIR + A&R).
-        report = cr.build_report(audio, genre, depth, lens, year)
+        report = None
+        score_out = None
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            r_fut = pool.submit(_build)
+            s_fut = pool.submit(_score)
+            report = r_fut.result()
+            score_out = s_fut.result()  # None if no model loc configured
 
         # Fame-blind model score (internal only — never surfaced as "hit probability").
         # Optional/secondary: its absence must never break the report.
         model_version = None
         fameblind = None
-        loc = _parse_model_loc()
         if loc:
             try:
                 import pickle
                 import numpy as np
 
-                import cumbre_scoring as cs  # noqa: E402
+                # Change 2: Use cached pkl — download only on first (cold) invocation.
+                mp = PKL_CACHE
+                if not os.path.exists(mp):
+                    _download_to(s3, loc[0], loc[1], mp)
 
-                out = cs.analyze_song(audio, genre, year=year)
-                mp = _download(s3, loc[0], loc[1], ".pkl")
+                out = score_out  # already computed in parallel above
                 art = pickle.load(open(mp, "rb"))
                 feats = art.get("features") or art.get("required_vars") or []
-                mv = out.get("model_vector", {})
+                mv = out.get("model_vector", {}) if out else {}
                 x = np.array([[float(mv.get(f, 0.0)) for f in feats]])
                 proba = float(art["best_model"].predict_proba(x)[0, 1])
                 thr = art.get("best_f1_threshold", 0.5)
                 model_version = str(art.get("trained_at", "")) or None
                 fameblind = {"score": round(proba, 4), "threshold": float(thr),
                              "above_threshold": bool(proba >= thr)}
-                os.remove(mp)
+                # Do NOT os.remove(mp) — it is the persistent cache.
             except Exception as e:  # noqa: BLE001
                 fameblind = {"error": str(e)[:200]}  # internal-only; report still returns
 

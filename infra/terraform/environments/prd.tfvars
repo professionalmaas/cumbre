@@ -18,8 +18,8 @@ monthly_budget_usd = 200
 
 # ── Shared remote state ────────────────────────────────────────────────────────
 # Replace ACCOUNT_ID_PLACEHOLDER with your 12-digit AWS account ID.
-shared_state_bucket = "certus-terraform-state-ACCOUNT_ID_PLACEHOLDER"
-shared_state_key    = "shared/prd/terraform.tfstate"
+shared_state_bucket = "hub-terraform-state-110844251073"
+shared_state_key    = "hub-prd/shared/terraform.tfstate"
 
 # ── Cognito ───────────────────────────────────────────────────────────────────
 # Must be globally unique. If "certus-cumbre-prd" is taken, add a suffix.
@@ -31,7 +31,7 @@ route53_zone_id = ""
 # ── App config (non-secret) ───────────────────────────────────────────────────
 admin_emails             = "REQUIRED — comma-separated admin email(s)"
 kill_switch_scoring      = "off"
-low_confidence_threshold = "0.7"
+low_confidence_threshold = "0.0"
 
 # ── Database ──────────────────────────────────────────────────────────────────
 db_master_username = "cumbre"
