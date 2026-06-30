@@ -44,6 +44,29 @@ docs/      Cumbre_Build_Spec.md (SOURCE OF TRUTH), PHASE1_CHECKLIST.md, design b
 6. **Owned ML only.** Use `ml/CUMBRE_fameblind_model.pkl` (+ optional `ml/cumbre_audionet.pt`).
    No AGPL/non-commercial weights (no Essentia pretrained models, no MERT). librosa/torch/sklearn ok.
 
+## Terraform rules (MANDATORY — one wrong apply breaks auth sitewide)
+
+`terraform.tfvars` (gitignored) is the **ONLY** apply-time config file. It is auto-loaded.
+
+```sh
+# CORRECT — always run from infra/terraform/
+cd infra/terraform
+terraform plan
+terraform apply -auto-approve
+# or: make plan / make apply
+```
+
+**NEVER** pass `-var-file=environments/prd.tfvars.example`. It is a template with placeholder
+values. Passing it OVERRIDES the real `terraform.tfvars` — corrupting the ALB listener rule,
+the Cognito callback/logout URLs, and the shared state references. Last time this happened it
+took down auth sitewide (redirect_mismatch on every sign-in attempt).
+
+`host_header` in `terraform.tfvars` must always be `"getcumbre.com"`. It controls:
+1. ALB listener routing (wrong value = 404 on every request)
+2. Cognito callback + logout URLs (wrong value = auth broken for all users)
+
+The `make validate` target in `infra/terraform/Makefile` checks this before applying.
+
 ## Git guardrails (installed — standalone repo, branch `PRD`)
 This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks live in
 `.githooks/` and are armed into `.git/hooks/`. Re-arm after a fresh clone:
@@ -52,8 +75,9 @@ This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks li
   blocks junk/`.claude/` files · advisory secret scan (AWS/Anthropic/Stripe/PEM). Overrides:
   `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_JUNK=YES`, `STRICT_SECRETS=1` (make scan blocking).
 - **pre-push**: blocks pushes to `main`/`master` and force-pushes · **BUILD-GREEN gate** —
-  typechecks `web/` + `steps/` (`tsc --noEmit`) and refuses to push broken TypeScript (CI runs
-  the full build). Overrides: `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_FORCE=YES`, `SKIP_BUILD_CHECK=1`.
+  typechecks `web/` + `steps/` (`tsc --noEmit`) · **TF VAR guard** — if `.tf` files changed,
+  verifies `terraform.tfvars host_header="getcumbre.com"` (wrong value = auth broken sitewide).
+  Overrides: `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_FORCE=YES`, `SKIP_BUILD_CHECK=1`, `SKIP_TF_CHECK=1`.
 - Safe config set: `push.default=current`, `push.autoSetupRemote=true`, `pull.ff=only`.
 - Pushes use the user's credentials and must be run by the user (the agent cannot push). Copyrighted
   demo clips (`web/public/samples/*.mp3`) and secrets (`.env*`, `*.tfvars`, `*.pkl`) are gitignored.

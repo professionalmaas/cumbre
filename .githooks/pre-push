@@ -52,6 +52,26 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   fi
 done
 
+# ── TERRAFORM VAR GUARD ──────────────────────────────────────────────────────
+# If any .tf or .tfvars file is staged, verify that terraform.tfvars still
+# has the correct critical values (wrong host_header = broken auth sitewide).
+# Override: SKIP_TF_CHECK=1 git push
+if [ "$status" -eq 0 ] && [ "$SKIP_TF_CHECK" != "1" ]; then
+  tf_dir="$root/infra/terraform"
+  tfvars="$tf_dir/terraform.tfvars"
+  if git diff --name-only HEAD 2>/dev/null | grep -q '\.tf'; then
+    printf '   . validating terraform.tfvars critical vars ...\n'
+    if [ -f "$tfvars" ]; then
+      if ! grep -q 'host_header\s*=\s*"getcumbre\.com"' "$tfvars"; then
+        printf '\n  X BLOCKED: terraform.tfvars host_header is not "getcumbre.com"\n'
+        printf '     Wrong value corrupts ALB routing + Cognito callbacks (auth broken).\n'
+        printf '     Fix terraform.tfvars or bypass: SKIP_TF_CHECK=1 git push\n'
+        status=1
+      fi
+    fi
+  fi
+fi
+
 # ── BUILD-GREEN GATE ─────────────────────────────────────────────────────────
 # Nothing with broken TypeScript reaches GitHub/CI. Fast typecheck (tsc --noEmit,
 # incremental), not a full prod build (CI runs that). Runs at push time so commits

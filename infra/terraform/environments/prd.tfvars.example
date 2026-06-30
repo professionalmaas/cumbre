@@ -1,0 +1,64 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  TEMPLATE ONLY — do NOT pass this file to terraform apply directly.         ║
+# ║                                                                              ║
+# ║  CORRECT workflow (from infra/terraform/):                                   ║
+# ║    terraform plan                                                            ║
+# ║    terraform apply -auto-approve                                             ║
+# ║                                                                              ║
+# ║  Terraform auto-loads terraform.tfvars (gitignored, has real values).        ║
+# ║  Passing -var-file=...prd.tfvars.example OVERRIDES real values with          ║
+# ║  placeholders and WILL break auth, routing, and state lookups.               ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# Fresh-environment setup: copy to terraform.tfvars, fill every REQUIRED value.
+
+aws_region  = "us-east-1"
+environment = "prd"
+
+# ── Routing ───────────────────────────────────────────────────────────────────
+# CRITICAL: controls ALB listener rule AND Cognito callback/logout URLs.
+# Wrong value = auth broken sitewide (redirect_mismatch on every sign-in).
+host_header = "getcumbre.com"
+
+# ── GitHub ────────────────────────────────────────────────────────────────────
+github_repo        = "professionalmaas/cumbre"
+github_environment = "prd"
+
+# ── Admin ─────────────────────────────────────────────────────────────────────
+admin_email        = "REQUIRED — your-email@example.com"
+monthly_budget_usd = 200
+
+# ── Shared remote state ────────────────────────────────────────────────────────
+shared_state_bucket = "hub-terraform-state-ACCOUNT_ID"
+shared_state_key    = "hub-prd/shared/terraform.tfstate"
+
+# ── Cognito ───────────────────────────────────────────────────────────────────
+cognito_domain_prefix = "getcumbre-prd"
+
+# ── Route53 (optional) ───────────────────────────────────────────────────────
+route53_zone_id = ""
+
+# ── App config (non-secret) ───────────────────────────────────────────────────
+admin_emails             = "REQUIRED — comma-separated admin email(s)"
+kill_switch_scoring      = "off"
+low_confidence_threshold = "0.0"
+
+# ── Database ──────────────────────────────────────────────────────────────────
+db_master_username = "cumbre"
+
+# ── Stripe ───────────────────────────────────────────────────────────────────
+stripe_price_summit = "REQUIRED — price_XXXX"
+stripe_price_season = "REQUIRED — price_XXXX"
+
+# ── ACRCloud ─────────────────────────────────────────────────────────────────
+acrcloud_host = "REQUIRED — identify-eu-west-1.acrcloud.com"
+
+# ── SECRETS (never commit — provide in terraform.tfvars or TF_VAR_* env) ──────
+# session_secret          = "REQUIRED — 32+ random chars"
+# stripe_secret_key       = "REQUIRED — sk_live_..."
+# stripe_webhook_secret   = "REQUIRED — whsec_..."
+# openai_api_key          = "REQUIRED — sk-..."
+# acrcloud_access_key     = "REQUIRED"
+# acrcloud_access_secret  = "REQUIRED"
+# cognito_client_secret   = "REQUIRED"
+# database_url            = "REQUIRED — postgres://..."
