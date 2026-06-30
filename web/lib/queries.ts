@@ -261,7 +261,7 @@ export async function rejectReview(reviewId: string): Promise<void> {
     if (!r.rows[0]) return;
     await c.query(`update jobs set status = 'rejected' where id = $1`, [r.rows[0].job_id]);
     await c.query(
-      `update review_queue set resolved = true, resolution = 'rejected' where id = $1`,
+      `update review_queue set resolved = true, resolution = 'rejected', decided_at = now() where id = $1`,
       [reviewId]
     );
   });
@@ -281,7 +281,7 @@ export async function refundReview(reviewId: string): Promise<void> {
     );
     await c.query(`update jobs set status = 'rejected' where id = $1`, [row.job_id]);
     await c.query(
-      `update review_queue set resolved = true, resolution = 'refunded' where id = $1`,
+      `update review_queue set resolved = true, resolution = 'refunded', decided_at = now() where id = $1`,
       [reviewId]
     );
   });
@@ -289,7 +289,7 @@ export async function refundReview(reviewId: string): Promise<void> {
 
 export async function dismissReview(reviewId: string): Promise<void> {
   await query(
-    `update review_queue set resolved = true, resolution = 'dismissed' where id = $1`,
+    `update review_queue set resolved = true, resolution = 'dismissed', decided_at = now() where id = $1`,
     [reviewId]
   );
 }
