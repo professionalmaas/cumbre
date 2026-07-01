@@ -13,8 +13,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# next build reads NEXT_PUBLIC_* at build time only.
+# next build reads NEXT_PUBLIC_* at build time only, and inlines them into statically
+# generated pages (canonical/OG metadata included). Pass the public site URL as a build-arg
+# so SSG pages bake the real domain, not a fallback. Defaults to the prod domain so a plain
+# `docker build` is still correct; CI can override with --build-arg for another environment.
 # Runtime secrets are injected by ECS at task start — never bake them.
+ARG NEXT_PUBLIC_SITE_URL=https://getcumbre.com
+ARG NEXT_PUBLIC_APP_URL=https://getcumbre.com
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
