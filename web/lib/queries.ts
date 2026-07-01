@@ -65,6 +65,56 @@ export async function setJobExecution(jobId: string, executionArn: string): Prom
   await query(`update jobs set sfn_execution_arn = $2 where id = $1`, [jobId, executionArn]);
 }
 
+// Abuse guard for the free-to-run analysis pipeline: each run costs real money (worker
+// compute + OpenAI/ACRCloud/Claude) regardless of whether the report ends up paid-unlocked.
+export async function countRecentJobs(userId: string, hours: number): Promise<number> {
+  const row = await one<{ n: string }>(
+    `select count(*)::int as n from jobs where user_id = $1 and created_at > now() - ($2 || ' hours')::interval`,
+    [userId, String(hours)]
+  );
+  return row ? Number(row.n) : 0;
+}
+
+// Unlock a specific job's full report — idempotent. Debits 1 credit only when not covered by
+// an active subscription; the unique index on credit_ledger(job_id) where reason='analysis'
+// (same one the old auto-charge used) makes a double-click a no-op either way.
+export async function unlockJobReport(input: {
+  jobId: string;
+  userId: string;
+  subscriptionActive: boolean;
+}): Promise<{ unlocked: boolean }> {
+  return tx(async (c) => {
+    const owns = await c.query<{ id: string; unlocked_full: boolean }>(
+      `select id, unlocked_full from jobs where id = $1 and user_id = $2`,
+      [input.jobId, input.userId]
+    );
+    if (!owns.rowCount) return { unlocked: false };
+    if (owns.rows[0].unlocked_full) return { unlocked: true };
+
+    if (!input.subscriptionActive) {
+      // Check-then-insert, not a locked read: two concurrent unlocks on two DIFFERENT jobs
+      // by the same user with exactly 1 credit could both pass this check before either
+      // commits (the per-job idempotency guard above only protects the SAME job). Acceptable
+      // at current volume; a materialized balance row with SELECT..FOR UPDATE would close it.
+      const bal = await c.query<{ balance: string }>(
+        `select coalesce(sum(delta), 0)::int as balance from credit_ledger where user_id = $1`,
+        [input.userId]
+      );
+      if (Number(bal.rows[0].balance) < 1) return { unlocked: false };
+
+      await c.query(
+        `insert into credit_ledger (user_id, delta, reason, job_id)
+         values ($1, -1, 'analysis', $2)
+         on conflict (job_id) where (reason = 'analysis') do nothing`,
+        [input.userId, input.jobId]
+      );
+    }
+
+    await c.query(`update jobs set unlocked_full = true where id = $1`, [input.jobId]);
+    return { unlocked: true };
+  });
+}
+
 export interface JobWithSong
   extends Pick<Job, "id" | "status" | "stage" | "created_at" | "song_id" | "user_id"> {
   original_filename: string | null;
@@ -87,13 +137,25 @@ export async function listJobs(userId: string, limit = 10): Promise<JobWithSong[
 export async function getJobForUser(
   jobId: string,
   userId: string
-): Promise<(Pick<Job, "id" | "status" | "stage"> & { original_filename: string | null }) | null> {
+): Promise<
+  | (Pick<Job, "id" | "status" | "stage"> & { original_filename: string | null; unlocked_full: boolean })
+  | null
+> {
   return one(
-    `select j.id, j.status, j.stage, s.original_filename
+    `select j.id, j.status, j.stage, j.unlocked_full, s.original_filename
        from jobs j join songs s on s.id = j.song_id
       where j.id = $1 and j.user_id = $2`,
     [jobId, userId]
   );
+}
+
+export async function getDisplayName(userId: string): Promise<string | null> {
+  const row = await one<{ display_name: string | null }>(`select display_name from users where sub = $1`, [userId]);
+  return row?.display_name ?? null;
+}
+
+export async function setDisplayName(userId: string, displayName: string): Promise<void> {
+  await query(`update users set display_name = $2 where sub = $1`, [userId, displayName]);
 }
 
 export async function getReportForUser(

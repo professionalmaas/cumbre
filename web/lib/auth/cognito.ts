@@ -85,11 +85,16 @@ function jwks(issuer: string) {
 }
 
 // Verify the Cognito ID token: signature (JWKS), issuer, audience, expiry. Fail closed.
-export async function verifyIdToken(idToken: string): Promise<{ sub: string; email: string | null }> {
+// `audience` defaults to the OAuth hosted-UI client; pass the magic-link client id when
+// verifying a token issued via the CUSTOM_AUTH flow (a different app client, different `aud`).
+export async function verifyIdToken(
+  idToken: string,
+  audience?: string
+): Promise<{ sub: string; email: string | null }> {
   const c = cfg();
   const { payload } = await jwtVerify(idToken, jwks(c.issuer), {
     issuer: c.issuer,
-    audience: c.clientId,
+    audience: audience ?? c.clientId,
   });
   if (!payload.sub) throw new Error("id token missing sub");
   return { sub: payload.sub, email: (payload.email as string) ?? null };

@@ -81,6 +81,15 @@ resource "aws_cognito_user_pool" "cumbre" {
     }
   }
 
+  # NOTE: this is a single nested block — every trigger the pool uses must be listed here
+  # together. Adding a new trigger later means re-stating ALL of them, not just the new one.
+  lambda_config {
+    pre_sign_up                    = aws_lambda_function.cognito_presignup.arn
+    define_auth_challenge          = aws_lambda_function.cognito_define_auth.arn
+    create_auth_challenge          = aws_lambda_function.cognito_create_auth.arn
+    verify_auth_challenge_response = aws_lambda_function.cognito_verify_auth.arn
+  }
+
   tags = {
     Name = "${local.prefix}-users"
   }
@@ -89,6 +98,269 @@ resource "aws_cognito_user_pool" "cumbre" {
 resource "aws_cognito_user_pool_domain" "cumbre" {
   domain       = var.cognito_domain_prefix
   user_pool_id = aws_cognito_user_pool.cumbre.id
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# (a2) Cognito Lambda triggers — account-linking (PreSignUp) + magic-link
+# (CUSTOM_AUTH: DefineAuthChallenge, CreateAuthChallenge, VerifyAuthChallengeResponse,
+# CustomMessage). One shared IAM role; each trigger is its own Lambda function bundled
+# from steps/src/cognito-*.ts by the same esbuild pipeline as the analyze-loop steps.
+# ══════════════════════════════════════════════════════════════════════════════
+resource "aws_iam_role" "cognito_trigger" {
+  name = "${local.prefix}-cognito-trigger"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = { Name = "${local.prefix}-cognito-trigger" }
+}
+
+resource "aws_iam_role_policy" "cognito_trigger_permissions" {
+  name = "cognito-trigger-permissions"
+  role = aws_iam_role.cognito_trigger.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AccountLinking"
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:ListUsers",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminLinkProviderForUser",
+        ]
+        Resource = aws_cognito_user_pool.cumbre.arn
+      },
+      {
+        Sid      = "SecretsForMagicLink"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.prefix}/secrets*"
+      },
+      {
+        Sid      = "CloudWatchLogs"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.prefix}-cognito-*:*"
+      },
+    ]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "cognito_presignup" {
+  name              = "/aws/lambda/${local.prefix}-cognito-presignup"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-cognito-presignup-logs" }
+}
+
+data "archive_file" "cognito_presignup" {
+  type        = "zip"
+  source_dir  = "${path.root}/../../steps/dist/cognito-presignup"
+  output_path = "${path.root}/../../steps/dist/cognito-presignup.zip"
+}
+
+resource "aws_lambda_function" "cognito_presignup" {
+  function_name    = "${local.prefix}-cognito-presignup"
+  role             = aws_iam_role.cognito_trigger.arn
+  runtime          = "nodejs20.x"
+  handler          = "index.handler"
+  filename         = data.archive_file.cognito_presignup.output_path
+  source_code_hash = data.archive_file.cognito_presignup.output_base64sha256
+
+  timeout     = 10
+  memory_size = 256
+
+  # No env vars needed: Lambda auto-populates AWS_REGION (a reserved name — cannot be
+  # overridden), which is all this handler reads.
+
+  depends_on = [aws_cloudwatch_log_group.cognito_presignup]
+
+  tags = { Name = "${local.prefix}-cognito-presignup" }
+}
+
+# Cognito must be explicitly granted invoke permission — it is not covered by the pool's
+# own IAM identity, this is a resource-based Lambda permission.
+resource "aws_lambda_permission" "cognito_presignup" {
+  statement_id  = "AllowCognitoInvokePreSignUp"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cognito_presignup.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.cumbre.arn
+}
+
+# SES send permission for the magic-link email (CreateAuthChallenge calls SES directly —
+# Cognito's CustomMessage trigger does not fire for CUSTOM_CHALLENGE, only for its own
+# built-in MFA code delivery).
+resource "aws_iam_role_policy" "cognito_trigger_ses" {
+  name = "cognito-trigger-ses-send"
+  role = aws_iam_role.cognito_trigger.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "SendMagicLinkEmail"
+      Effect   = "Allow"
+      Action   = ["ses:SendEmail"]
+      Resource = "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.current.account_id}:identity/${var.host_header}"
+    }]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "cognito_define_auth" {
+  name              = "/aws/lambda/${local.prefix}-cognito-define-auth"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-cognito-define-auth-logs" }
+}
+
+data "archive_file" "cognito_define_auth" {
+  type        = "zip"
+  source_dir  = "${path.root}/../../steps/dist/cognito-define-auth"
+  output_path = "${path.root}/../../steps/dist/cognito-define-auth.zip"
+}
+
+resource "aws_lambda_function" "cognito_define_auth" {
+  function_name    = "${local.prefix}-cognito-define-auth"
+  role             = aws_iam_role.cognito_trigger.arn
+  runtime          = "nodejs20.x"
+  handler          = "index.handler"
+  filename         = data.archive_file.cognito_define_auth.output_path
+  source_code_hash = data.archive_file.cognito_define_auth.output_base64sha256
+  timeout          = 10
+  memory_size      = 256
+  depends_on       = [aws_cloudwatch_log_group.cognito_define_auth]
+  tags             = { Name = "${local.prefix}-cognito-define-auth" }
+}
+
+resource "aws_lambda_permission" "cognito_define_auth" {
+  statement_id  = "AllowCognitoInvokeDefineAuth"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cognito_define_auth.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.cumbre.arn
+}
+
+resource "aws_cloudwatch_log_group" "cognito_create_auth" {
+  name              = "/aws/lambda/${local.prefix}-cognito-create-auth"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-cognito-create-auth-logs" }
+}
+
+data "archive_file" "cognito_create_auth" {
+  type        = "zip"
+  source_dir  = "${path.root}/../../steps/dist/cognito-create-auth"
+  output_path = "${path.root}/../../steps/dist/cognito-create-auth.zip"
+}
+
+resource "aws_lambda_function" "cognito_create_auth" {
+  function_name    = "${local.prefix}-cognito-create-auth"
+  role             = aws_iam_role.cognito_trigger.arn
+  runtime          = "nodejs20.x"
+  handler          = "index.handler"
+  filename         = data.archive_file.cognito_create_auth.output_path
+  source_code_hash = data.archive_file.cognito_create_auth.output_base64sha256
+  timeout          = 15
+  memory_size      = 256
+
+  vpc_config {
+    subnet_ids         = local.s.private_subnet_ids
+    security_group_ids = [aws_security_group.ecs_steps.id]
+  }
+
+  environment {
+    variables = merge(local.step_env, {
+      NEXT_PUBLIC_APP_URL   = "https://${var.host_header}"
+      MAGIC_LINK_FROM_EMAIL = "no-reply@${var.host_header}"
+    })
+  }
+
+  depends_on = [aws_cloudwatch_log_group.cognito_create_auth, aws_iam_role_policy_attachment.lambda_step_vpc]
+  tags       = { Name = "${local.prefix}-cognito-create-auth" }
+}
+
+resource "aws_lambda_permission" "cognito_create_auth" {
+  statement_id  = "AllowCognitoInvokeCreateAuth"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cognito_create_auth.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.cumbre.arn
+}
+
+resource "aws_cloudwatch_log_group" "cognito_verify_auth" {
+  name              = "/aws/lambda/${local.prefix}-cognito-verify-auth"
+  retention_in_days = 14
+  kms_key_id        = local.s.kms_logs_key_arn != "" ? local.s.kms_logs_key_arn : null
+  tags              = { Name = "${local.prefix}-cognito-verify-auth-logs" }
+}
+
+data "archive_file" "cognito_verify_auth" {
+  type        = "zip"
+  source_dir  = "${path.root}/../../steps/dist/cognito-verify-auth"
+  output_path = "${path.root}/../../steps/dist/cognito-verify-auth.zip"
+}
+
+resource "aws_lambda_function" "cognito_verify_auth" {
+  function_name    = "${local.prefix}-cognito-verify-auth"
+  role             = aws_iam_role.cognito_trigger.arn
+  runtime          = "nodejs20.x"
+  handler          = "index.handler"
+  filename         = data.archive_file.cognito_verify_auth.output_path
+  source_code_hash = data.archive_file.cognito_verify_auth.output_base64sha256
+  timeout          = 10
+  memory_size      = 256
+
+  vpc_config {
+    subnet_ids         = local.s.private_subnet_ids
+    security_group_ids = [aws_security_group.ecs_steps.id]
+  }
+
+  environment {
+    variables = local.step_env
+  }
+
+  depends_on = [aws_cloudwatch_log_group.cognito_verify_auth, aws_iam_role_policy_attachment.lambda_step_vpc]
+  tags       = { Name = "${local.prefix}-cognito-verify-auth" }
+}
+
+resource "aws_lambda_permission" "cognito_verify_auth" {
+  statement_id  = "AllowCognitoInvokeVerifyAuth"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cognito_verify_auth.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.cumbre.arn
+}
+
+# Dedicated app client for magic-link sign-in — isolated from the "web" client (which handles
+# the existing OAuth hosted-UI password/Google flows) so enabling CUSTOM_AUTH here can never
+# interact with or regress the existing, hardened login path.
+resource "aws_cognito_user_pool_client" "magic_link" {
+  name         = "${local.prefix}-magic-link"
+  user_pool_id = aws_cognito_user_pool.cumbre.id
+
+  generate_secret = true
+
+  explicit_auth_flows = ["ALLOW_CUSTOM_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
+
+  prevent_user_existence_errors = "ENABLED"
+  enable_token_revocation       = true
+
+  access_token_validity  = 1
+  id_token_validity      = 1
+  refresh_token_validity = 30
+  token_validity_units {
+    access_token  = "hours"
+    id_token      = "hours"
+    refresh_token = "days"
+  }
 }
 
 resource "aws_cognito_user_pool_client" "web" {
@@ -249,9 +521,9 @@ resource "aws_db_parameter_group" "cumbre" {
 }
 
 resource "aws_db_instance" "cumbre" {
-  identifier        = "${local.prefix}-db"
-  engine            = "postgres"
-  engine_version    = "16"
+  identifier            = "${local.prefix}-db"
+  engine                = "postgres"
+  engine_version        = "16"
   instance_class        = "db.t4g.small"
   allocated_storage     = 20
   max_allocated_storage = 100
@@ -950,35 +1222,37 @@ module "app" {
 
   # ── Secrets (Secrets Manager; never in image) ─────────────────────────────────
   app_secrets = {
-    DATABASE_URL           = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_proxy.cumbre.endpoint}:5432/cumbre"
-    COGNITO_CLIENT_SECRET  = aws_cognito_user_pool_client.web.client_secret
-    SESSION_SECRET         = var.session_secret
-    STRIPE_SECRET_KEY      = var.stripe_secret_key
-    STRIPE_WEBHOOK_SECRET  = var.stripe_webhook_secret
-    STRIPE_PRICE_SUMMIT    = var.stripe_price_summit
-    STRIPE_PRICE_SEASON    = var.stripe_price_season
-    OPENAI_API_KEY         = var.openai_api_key
-    ACRCLOUD_HOST          = var.acrcloud_host
-    ACRCLOUD_ACCESS_KEY    = var.acrcloud_access_key
-    ACRCLOUD_ACCESS_SECRET = var.acrcloud_access_secret
+    DATABASE_URL             = "postgres://${var.db_master_username}:${random_password.db.result}@${aws_db_proxy.cumbre.endpoint}:5432/cumbre"
+    COGNITO_CLIENT_SECRET    = aws_cognito_user_pool_client.web.client_secret
+    MAGIC_LINK_CLIENT_SECRET = aws_cognito_user_pool_client.magic_link.client_secret
+    SESSION_SECRET           = var.session_secret
+    STRIPE_SECRET_KEY        = var.stripe_secret_key
+    STRIPE_WEBHOOK_SECRET    = var.stripe_webhook_secret
+    STRIPE_PRICE_SUMMIT      = var.stripe_price_summit
+    STRIPE_PRICE_SEASON      = var.stripe_price_season
+    OPENAI_API_KEY           = var.openai_api_key
+    ACRCLOUD_HOST            = var.acrcloud_host
+    ACRCLOUD_ACCESS_KEY      = var.acrcloud_access_key
+    ACRCLOUD_ACCESS_SECRET   = var.acrcloud_access_secret
   }
 
   # ── Non-secret env vars ───────────────────────────────────────────────────────
   app_env_vars = {
-    NEXT_PUBLIC_APP_URL           = "https://${var.host_header}"
-    NEXT_PUBLIC_SITE_URL          = "https://${var.host_header}"
-    NEXT_PUBLIC_STRIPE_SUMMIT_URL = "https://buy.stripe.com/bJe6oG5WL8GI7flbQJawo01"
-    NEXT_PUBLIC_STRIPE_SEASON_URL = "https://buy.stripe.com/fZufZgad13mo9nt081awo00"
-    NEXT_PUBLIC_GOOGLE_ENABLED    = var.google_client_id != "" ? "true" : "false"
-    COGNITO_USER_POOL_ID      = aws_cognito_user_pool.cumbre.id
-    COGNITO_CLIENT_ID         = aws_cognito_user_pool_client.web.id
-    COGNITO_DOMAIN            = var.cognito_domain_prefix
-    COGNITO_ISSUER            = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.cumbre.id}"
-    S3_UPLOAD_BUCKET          = aws_s3_bucket.uploads.id
-    ANALYZE_STATE_MACHINE_ARN = aws_sfn_state_machine.analyze.arn
-    ADMIN_EMAILS              = var.admin_emails
-    KILL_SWITCH_SCORING       = var.kill_switch_scoring
-    LOW_CONFIDENCE_THRESHOLD  = var.low_confidence_threshold
+    NEXT_PUBLIC_APP_URL              = "https://${var.host_header}"
+    NEXT_PUBLIC_SITE_URL             = "https://${var.host_header}"
+    NEXT_PUBLIC_STRIPE_SUMMIT_URL    = "https://buy.stripe.com/bJe6oG5WL8GI7flbQJawo01"
+    NEXT_PUBLIC_STRIPE_SEASON_URL    = "https://buy.stripe.com/fZufZgad13mo9nt081awo00"
+    NEXT_PUBLIC_GOOGLE_ENABLED       = var.google_client_id != "" ? "true" : "false"
+    COGNITO_USER_POOL_ID             = aws_cognito_user_pool.cumbre.id
+    COGNITO_CLIENT_ID                = aws_cognito_user_pool_client.web.id
+    MAGIC_LINK_CLIENT_ID             = aws_cognito_user_pool_client.magic_link.id
+    COGNITO_DOMAIN                   = var.cognito_domain_prefix
+    COGNITO_ISSUER                   = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.cumbre.id}"
+    S3_UPLOAD_BUCKET                 = aws_s3_bucket.uploads.id
+    ANALYZE_STATE_MACHINE_ARN        = aws_sfn_state_machine.analyze.arn
+    ADMIN_EMAILS                     = var.admin_emails
+    KILL_SWITCH_SCORING              = var.kill_switch_scoring
+    LOW_CONFIDENCE_THRESHOLD         = var.low_confidence_threshold
     NEXT_PUBLIC_RUM_APP_MONITOR_ID   = aws_rum_app_monitor.cumbre.id
     NEXT_PUBLIC_RUM_IDENTITY_POOL_ID = aws_cognito_identity_pool.rum.id
     NEXT_PUBLIC_AWS_REGION           = var.aws_region
@@ -1014,6 +1288,20 @@ resource "aws_iam_role_policy" "web_task_extra" {
         Effect   = "Allow"
         Action   = ["states:StartExecution"]
         Resource = aws_sfn_state_machine.analyze.arn
+      },
+      {
+        # Magic-link server actions (web/lib/actions/magicLink.ts): look up existing users by
+        # email, provision brand-new passwordless users, and drive the CUSTOM_AUTH challenge.
+        Sid    = "MagicLinkAuth"
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:ListUsers",
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminInitiateAuth",
+          "cognito-idp:AdminRespondToAuthChallenge",
+        ]
+        Resource = aws_cognito_user_pool.cumbre.arn
       },
     ]
   })
@@ -1140,9 +1428,9 @@ resource "aws_iam_role_policy" "worker_lambda_permissions" {
           Resource = aws_secretsmanager_secret.worker.arn
         },
         {
-          Sid    = "CloudWatchLogs"
-          Effect = "Allow"
-          Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+          Sid      = "CloudWatchLogs"
+          Effect   = "Allow"
+          Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
           Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.prefix}-worker-lambda:*"
         },
       ],
@@ -1197,7 +1485,7 @@ resource "aws_lambda_function" "worker_lambda" {
     variables = {
       S3_UPLOAD_BUCKET = aws_s3_bucket.uploads.id
       # Bucket name (not URI) so aws_entry._parse_model_loc() resolves the key correctly
-      CUMBRE_MODEL_S3  = aws_s3_bucket.artifacts.id
+      CUMBRE_MODEL_S3 = aws_s3_bucket.artifacts.id
       # API keys passed as plain env vars here; for tighter least-privilege these
       # could be injected via a Lambda extension reading from Secrets Manager instead.
       ANTHROPIC_API_KEY = var.anthropic_api_key

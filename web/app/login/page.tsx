@@ -4,6 +4,7 @@ import { authorizeUrl } from "@/lib/auth/cognito";
 import { PeakMark } from "@/components/Brand";
 import { DEV_MODE } from "@/lib/devMode";
 import { devSignIn } from "@/lib/actions/auth";
+import { MagicLinkForm } from "@/components/MagicLinkForm";
 
 export const dynamic = "force-dynamic";
 
@@ -98,40 +99,40 @@ export default async function LoginPage() {
                 DEV_MODE — local harness, no Cognito.
               </p>
             </form>
-          ) : process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true" ? (
+          ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <a
-                href={authorizeUrl("login", "Google")}
-                className="btn-primary"
-                style={{ gap: 10 }}
-              >
-                <GoogleIcon />
-                Continue with Google
-              </a>
+              {/* Primary: email-only, no password to invent. */}
+              <MagicLinkForm />
 
-              <div
+              {process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true" && (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                    <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                    <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}>
+                      OR
+                    </span>
+                    <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                  </div>
+                  <a href={authorizeUrl("login", "Google")} className="btn-ghost" style={{ gap: 10 }}>
+                    <GoogleIcon />
+                    Continue with Google
+                  </a>
+                </>
+              )}
+
+              <a
+                href={href!}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  margin: "4px 0",
+                  textAlign: "center",
+                  fontSize: 11.5,
+                  color: "var(--muted)",
+                  textDecoration: "underline",
+                  marginTop: 2,
                 }}
               >
-                <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
-                <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}>
-                  OR
-                </span>
-                <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
-              </div>
-
-              <a href={href!} className="btn-ghost">
-                Continue with email →
+                Have a password? Sign in that way instead
               </a>
             </div>
-          ) : (
-            <a href={href!} className="btn-primary">
-              Get started →
-            </a>
           )}
 
           <p
