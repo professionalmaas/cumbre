@@ -21,8 +21,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-// Full legal detail reached from the small-print footer. Plain-English; replace bracketed
-// placeholders ([entity], [contact], DMCA agent) with your registered details before launch.
+// Full legal detail reached from the small-print footer. Plain-English summary; the binding
+// ToS/Privacy/DMCA/AUP are the linked subpages. TODO(legal): Manatt, Phelps & Phillips, LLP to
+// finalize; still needed = registered mailing address + working legal@getcumbre.com inbox.
 export default function LegalPage() {
   return (
     <main className="frame">
@@ -40,8 +41,8 @@ export default function LegalPage() {
         Terms, Privacy &amp; IP
       </h1>
       <p style={{ color: "var(--faint)", fontSize: 12 }}>
-        Last updated {new Date().getFullYear()}. This is a plain-English summary; [entity] should have
-        counsel finalize the binding ToS &amp; Privacy Policy before public launch.
+        Last updated July 1, 2026. This is a plain-English summary; the binding ToS, Privacy Policy,
+        DMCA policy, and Acceptable Use Policy are the linked subpages below.
       </p>
 
       <nav
@@ -102,7 +103,7 @@ export default function LegalPage() {
 
       <Section title="Copyright &amp; DMCA">
         Cumbre respects intellectual property and enforces a repeat-infringer policy. If you believe
-        content was processed in violation of your rights, contact our DMCA agent at [contact]. We
+        content was processed in violation of your rights, contact our DMCA agent at legal@getcumbre.com. We
         run an automated originality (fingerprint) check and route suspected matches to human review
         before any result is delivered.
       </Section>
@@ -114,12 +115,12 @@ export default function LegalPage() {
       </Section>
 
       <Section title="Liability">
-        Cumbre is provided "as is." To the maximum extent permitted by law, [entity] is not liable
+        Cumbre is provided "as is." To the maximum extent permitted by law, Professional MAAS LLC is not liable
         for decisions you make based on the feedback, or for any indirect or consequential damages.
       </Section>
 
       <p style={{ color: "var(--faint)", fontSize: 11, marginTop: 26 }}>
-        Questions? [contact]. © {new Date().getFullYear()} Cumbre. All rights reserved.
+        Questions? legal@getcumbre.com. © {new Date().getFullYear()} Cumbre. All rights reserved.
       </p>
     </main>
   );

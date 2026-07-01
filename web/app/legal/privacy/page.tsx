@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
 
-// TEMPLATE — have counsel review before public launch.
+// TODO(legal): Manatt, Phelps & Phillips, LLP to finalize. Still needed: registered mailing
+// address for the data-controller block, and a working legal@getcumbre.com inbox for requests.
 export const metadata: Metadata = {
   title: "Privacy Policy · Cumbre",
   description:
@@ -32,20 +33,6 @@ export default function PrivacyPage() {
         <Brand />
       </header>
 
-      <p
-        style={{
-          marginTop: 18,
-          padding: "8px 12px",
-          border: "1px dashed var(--line-strong)",
-          borderRadius: 8,
-          color: "var(--faint)",
-          fontSize: 11,
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        TEMPLATE — have counsel review before public launch.
-      </p>
-
       <div className="eyebrow" style={{ marginTop: 20 }}>
         Your data
       </div>
@@ -53,8 +40,8 @@ export default function PrivacyPage() {
         Privacy Policy
       </h1>
       <p style={{ color: "var(--faint)", fontSize: 12 }}>
-        Last updated {new Date().getFullYear()}. This explains what [LEGAL ENTITY] (&quot;Cumbre&quot;)
-        collects, why, and your choices. Data controller: [LEGAL ENTITY], [ADDRESS].
+        Last updated July 1, 2026. This explains what Professional MAAS LLC (&quot;Cumbre&quot;)
+        collects, why, and your choices. Data controller: Professional MAAS LLC (State of Florida, USA).
       </p>
 
       <Section title="Our core promise">
@@ -146,7 +133,7 @@ export default function PrivacyPage() {
       <Section title="Your rights">
         Subject to applicable law, you may request to <b>access</b>, <b>export</b>, <b>correct</b>, or{" "}
         <b>delete</b> your personal data, and object to or restrict certain processing. To make a
-        request, email [DMCA AGENT NAME/EMAIL] from your account email; we will verify and respond
+        request, email legal@getcumbre.com from your account email; we will verify and respond
         within the timeframe the law requires. Deleting your account removes your derived metrics and
         report history (records we must keep for legal reasons excepted).
       </Section>
@@ -159,7 +146,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="Contact">
-        Privacy questions or requests: [DMCA AGENT NAME/EMAIL], [LEGAL ENTITY], [ADDRESS].
+        Privacy questions or requests: legal@getcumbre.com (Professional MAAS LLC).
       </Section>
 
       <LegalFooter />

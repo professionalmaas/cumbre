@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
 
-// TEMPLATE — have counsel review before public launch.
+// TODO(legal): Manatt, Phelps & Phillips, LLP to finalize; ensure legal@getcumbre.com inbox is live.
 export const metadata: Metadata = {
   title: "Acceptable Use Policy · Cumbre",
   description:
@@ -32,20 +32,6 @@ export default function AupPage() {
         <Brand />
       </header>
 
-      <p
-        style={{
-          marginTop: 18,
-          padding: "8px 12px",
-          border: "1px dashed var(--line-strong)",
-          borderRadius: 8,
-          color: "var(--faint)",
-          fontSize: 11,
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        TEMPLATE — have counsel review before public launch.
-      </p>
-
       <div className="eyebrow" style={{ marginTop: 20 }}>
         Ground rules
       </div>
@@ -53,8 +39,8 @@ export default function AupPage() {
         Acceptable Use Policy
       </h1>
       <p style={{ color: "var(--faint)", fontSize: 12 }}>
-        Last updated {new Date().getFullYear()}. This policy is part of your agreement with [LEGAL
-        ENTITY] (&quot;Cumbre&quot;) and supplements the{" "}
+        Last updated July 1, 2026. This policy is part of your agreement with Professional
+        MAAS LLC (&quot;Cumbre&quot;) and supplements the{" "}
         <Link href="/legal/terms" style={{ textDecoration: "underline", color: "var(--muted)" }}>
           Terms of Service
         </Link>
@@ -88,7 +74,7 @@ export default function AupPage() {
         <Link href="/legal/dmca" style={{ textDecoration: "underline", color: "var(--muted)" }}>
           DMCA policy
         </Link>{" "}
-        — will result in termination. Report abuse to [DMCA AGENT NAME/EMAIL].
+        — will result in termination. Report abuse to legal@getcumbre.com.
       </Section>
 
       <LegalFooter />

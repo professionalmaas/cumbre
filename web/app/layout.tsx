@@ -27,8 +27,12 @@ const spaceMono = Space_Mono({
   display: "swap",
 });
 
+// Prod fallback is HARDCODED to the live domain — never localhost. NEXT_PUBLIC_* is inlined at
+// `next build`, so an SSG page built without this env var would otherwise bake localhost into
+// canonical/OG URLs. The Dockerfile also passes NEXT_PUBLIC_SITE_URL as a build-arg (belt +
+// suspenders); this fallback guarantees prod even if that arg is ever missing.
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://getcumbre.com";
 
 const DESCRIPTION =
   "An AI climbing guide for your song: a genre-aware craft grade, your Top 3 fixes, and the route to the summit.";

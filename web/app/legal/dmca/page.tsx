@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
 
-// TEMPLATE — have counsel review before public launch.
+// TODO(legal): a DMCA designated agent legally needs a physical mailing address AND registration
+// with the US Copyright Office (dmca.copyright.gov). Interim copy uses the email agent contact;
+// add the registered mailing address + complete the Copyright Office registration before scale.
 export const metadata: Metadata = {
   title: "Copyright / DMCA Policy · Cumbre",
   description:
@@ -32,20 +34,6 @@ export default function DmcaPage() {
         <Brand />
       </header>
 
-      <p
-        style={{
-          marginTop: 18,
-          padding: "8px 12px",
-          border: "1px dashed var(--line-strong)",
-          borderRadius: 8,
-          color: "var(--faint)",
-          fontSize: 11,
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        TEMPLATE — have counsel review before public launch.
-      </p>
-
       <div className="eyebrow" style={{ marginTop: 20 }}>
         Copyright
       </div>
@@ -53,7 +41,7 @@ export default function DmcaPage() {
         Copyright &amp; DMCA Policy
       </h1>
       <p style={{ color: "var(--faint)", fontSize: 12 }}>
-        Last updated {new Date().getFullYear()}. [LEGAL ENTITY] (&quot;Cumbre&quot;) respects
+        Last updated July 1, 2026. Professional MAAS LLC (&quot;Cumbre&quot;) respects
         intellectual property and responds to valid notices under the Digital Millennium Copyright Act
         (DMCA). Cumbre requires uploaders to warrant they own or control the rights to their audio and
         runs an automated originality (fingerprint) check before any result is delivered.
@@ -62,11 +50,9 @@ export default function DmcaPage() {
       <Section title="Designated agent">
         Send copyright notices to our designated agent:
         <p style={{ marginTop: 8 }}>
-          [DMCA AGENT NAME/EMAIL]
+          DMCA Agent — Professional MAAS LLC
           <br />
-          [LEGAL ENTITY]
-          <br />
-          [ADDRESS]
+          legal@getcumbre.com
         </p>
       </Section>
 
