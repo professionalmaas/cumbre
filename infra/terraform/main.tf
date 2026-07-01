@@ -214,6 +214,11 @@ resource "aws_iam_role_policy" "cognito_trigger_ses" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "cognito_trigger_vpc" {
+  role       = aws_iam_role.cognito_trigger.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 resource "aws_cloudwatch_log_group" "cognito_define_auth" {
   name              = "/aws/lambda/${local.prefix}-cognito-define-auth"
   retention_in_days = 14
@@ -283,7 +288,7 @@ resource "aws_lambda_function" "cognito_create_auth" {
     })
   }
 
-  depends_on = [aws_cloudwatch_log_group.cognito_create_auth, aws_iam_role_policy_attachment.lambda_step_vpc]
+  depends_on = [aws_cloudwatch_log_group.cognito_create_auth, aws_iam_role_policy_attachment.cognito_trigger_vpc]
   tags       = { Name = "${local.prefix}-cognito-create-auth" }
 }
 
@@ -327,7 +332,7 @@ resource "aws_lambda_function" "cognito_verify_auth" {
     variables = local.step_env
   }
 
-  depends_on = [aws_cloudwatch_log_group.cognito_verify_auth, aws_iam_role_policy_attachment.lambda_step_vpc]
+  depends_on = [aws_cloudwatch_log_group.cognito_verify_auth, aws_iam_role_policy_attachment.cognito_trigger_vpc]
   tags       = { Name = "${local.prefix}-cognito-verify-auth" }
 }
 
