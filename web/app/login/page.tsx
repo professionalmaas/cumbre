@@ -14,6 +14,14 @@ export default async function LoginPage() {
   const user = await getUser();
   if (user) redirect("/");
   const href = DEV_MODE ? null : authorizeUrl("login");
+  const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true";
+  // Magic-link is gated OFF until SES production access is granted — in the sandbox its email
+  // only reaches SES-verified addresses, so a real new user would get a dead-end "check your
+  // email" with nothing arriving. While off, Google + hosted-UI password (both work for
+  // everyone) are the login paths. To re-enable once SES is out of the sandbox: set the ECS
+  // env var MAGIC_LINK_ENABLED="true" (app_env_vars in infra/terraform/main.tf) and redeploy —
+  // no code change needed. Read at runtime here (server component), so a redeploy is enough.
+  const magicLinkEnabled = process.env.MAGIC_LINK_ENABLED === "true";
 
   return (
     <main
@@ -99,12 +107,12 @@ export default async function LoginPage() {
                 DEV_MODE — local harness, no Cognito.
               </p>
             </form>
-          ) : (
+          ) : magicLinkEnabled ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {/* Primary: email-only, no password to invent. */}
               <MagicLinkForm />
 
-              {process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true" && (
+              {googleEnabled && (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
                     <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
@@ -133,6 +141,29 @@ export default async function LoginPage() {
                 Have a password? Sign in that way instead
               </a>
             </div>
+          ) : googleEnabled ? (
+            // Magic-link off (SES sandbox): Google primary + hosted-UI email/password, both of
+            // which work for any new user. This is the pre-magic-link login layout.
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <a href={authorizeUrl("login", "Google")} className="btn-primary" style={{ gap: 10 }}>
+                <GoogleIcon />
+                Continue with Google
+              </a>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}>
+                  OR
+                </span>
+                <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+              </div>
+              <a href={href!} className="btn-ghost">
+                Continue with email →
+              </a>
+            </div>
+          ) : (
+            <a href={href!} className="btn-primary">
+              Get started →
+            </a>
           )}
 
           <p
