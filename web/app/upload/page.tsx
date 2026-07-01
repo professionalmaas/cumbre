@@ -12,7 +12,6 @@ export default async function UploadPage() {
   if (!user) redirect("/login");
 
   const ent = await getEntitlement(user.sub, user.email ?? undefined);
-  if (!ent.hasAccess) redirect("/plans");
 
   return (
     <main className="frame">
@@ -29,11 +28,14 @@ export default async function UploadPage() {
       </header>
 
       <div className="eyebrow" style={{ marginTop: 24 }}>
-        {ent.subscriptionActive ? "Season Pass · unlimited" : `Summit credits · ${ent.credits}`}
+        {ent.isAdmin ? "Admin · unlimited" : ent.subscriptionActive ? "Season Pass · unlimited unlocks" : `${ent.credits} unlock${ent.credits === 1 ? "" : "s"} available`}
       </div>
-      <h1 className="serif" style={{ fontSize: 30, margin: "8px 0 16px" }}>
+      <h1 className="serif" style={{ fontSize: 30, margin: "8px 0 4px" }}>
         Add your track
       </h1>
+      <p style={{ color: "var(--muted)", fontSize: 13.5, margin: "0 0 16px" }}>
+        Grading is free — you only pay to unlock the full report.
+      </p>
 
       <UploadForm />
     </main>

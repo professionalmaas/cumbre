@@ -5,7 +5,12 @@ import { mkdirSync } from "fs";
 
 const STEPS = ["validate", "moderate", "fingerprint", "charge", "deliver", "reject", "review", "fail"];
 
-for (const name of STEPS) {
+// Cognito Lambda triggers (PreSignUp account-linking, CUSTOM_AUTH magic-link challenge flow).
+// Same bundling pipeline; kept in a separate list so Terraform's SFN step-name loop doesn't
+// pick these up as analyze-loop steps.
+const COGNITO_TRIGGERS = ["cognito-presignup", "cognito-define-auth", "cognito-create-auth", "cognito-verify-auth"];
+
+for (const name of [...STEPS, ...COGNITO_TRIGGERS]) {
   mkdirSync(`dist/${name}`, { recursive: true });
   await build({
     entryPoints: [`src/${name}.ts`],

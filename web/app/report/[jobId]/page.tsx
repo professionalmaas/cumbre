@@ -1,8 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { getUser } from "@/lib/auth/session";
 import { getJobForUser, getReportForUser, getFeedbackForUser, getShareToken } from "@/lib/queries";
+import { requireAdmin } from "@/lib/admin";
 import { Analyzing } from "@/components/Analyzing";
 import { ReportClient } from "@/components/report/ReportClient";
+import { TeaserGate } from "@/components/report/TeaserGate";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,26 @@ export default async function ReportPage({ params }: { params: { jobId: string }
   if (!report) {
     // Marked done but the report row hasn't propagated yet — keep polling.
     return <Analyzing status="running" stage="deliver" />;
+  }
+
+  const isAdmin = !!(await requireAdmin());
+  if (!isAdmin && !job.unlocked_full) {
+    // Teaser-only: never pass the full report into the client tree — only score/band/verdict,
+    // the same slice the public /share/[token] page exposes.
+    return (
+      <main className="frame">
+        <TeaserGate
+          jobId={params.jobId}
+          teaser={{
+            title: job.original_filename ?? "Your track",
+            overall: report.scores.overall,
+            band: report.scores.band,
+            verdict: report.scores.verdict,
+            hasCredits: false,
+          }}
+        />
+      </main>
+    );
   }
 
   const [feedback, shareToken] = await Promise.all([

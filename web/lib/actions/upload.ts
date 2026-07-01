@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { getUser } from "@/lib/auth/session";
 import { tx } from "@/lib/db";
 import { getEntitlement } from "@/lib/entitlement";
-import { setJobExecution } from "@/lib/queries";
+import { setJobExecution, countRecentJobs } from "@/lib/queries";
 import { presignUpload, objectExists } from "@/lib/aws/s3";
 import { startAnalyze } from "@/lib/aws/sfn";
 import { DEV_MODE } from "@/lib/devMode";
@@ -27,7 +27,12 @@ export interface PreparedUpload {
   contentType: string;
 }
 
-// Step 1: must be entitled (Summit credit or active Season sub) before we hand out an upload URL.
+// Analysis is free to run — payment gates VIEWING the full report (see unlock.ts), not
+// starting one. RATE_LIMIT_PER_DAY bounds worst-case compute/API cost from that free-to-run
+// pipeline (worker Fargate + OpenAI + ACRCloud + Claude all cost real money per run).
+const RATE_LIMIT_PER_DAY = 5;
+
+// Step 1: any signed-in user gets an upload URL, subject to the daily rate limit.
 export async function prepareUpload(
   filename: string
 ): Promise<{ ok: true; data: PreparedUpload } | { ok: false; error: string }> {
@@ -38,7 +43,10 @@ export async function prepareUpload(
   const contentType = ALLOWED_EXT[ext];
   if (!contentType) return { ok: false, error: `Unsupported file type .${ext}` };
 
-  if (!(await getEntitlement(user.sub, user.email ?? undefined)).hasAccess) return { ok: false, error: "no_access" };
+  const ent = await getEntitlement(user.sub, user.email ?? undefined);
+  if (!ent.isAdmin && (await countRecentJobs(user.sub, 24)) >= RATE_LIMIT_PER_DAY) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   const songId = randomUUID();
   const storageKey = `${user.sub}/${songId}.${ext}`;
@@ -57,7 +65,8 @@ export interface EnqueueInput {
   rightsWarranty: boolean;
 }
 
-// Step 2: persist song + job and start the analyze execution. Subscribers aren't charged.
+// Step 2: persist song + job and start the analyze execution. Every run produces a teaser;
+// unlocking the full report is a separate action (see unlockFullReport in unlock.ts).
 export async function enqueueAnalysis(
   input: EnqueueInput
 ): Promise<{ ok: true; jobId: string } | { ok: false; error: string }> {
@@ -67,7 +76,9 @@ export async function enqueueAnalysis(
     return { ok: false, error: "You must confirm you own the rights to this song." };
 
   const ent = await getEntitlement(user.sub, user.email ?? undefined);
-  if (!ent.hasAccess) return { ok: false, error: "no_access" };
+  if (!ent.isAdmin && (await countRecentJobs(user.sub, 24)) >= RATE_LIMIT_PER_DAY) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   if (!(await objectExists(input.storageKey))) return { ok: false, error: "Upload not found in storage." };
 

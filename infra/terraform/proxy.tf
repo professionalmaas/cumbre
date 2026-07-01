@@ -52,9 +52,9 @@ resource "aws_iam_role_policy" "db_proxy" {
     Version = "2012-10-17"
     Statement = concat(
       [{
-        Sid    = "GetDBSecret"
-        Effect = "Allow"
-        Action = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+        Sid      = "GetDBSecret"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
         Resource = aws_secretsmanager_secret.db_proxy_auth.arn
       }],
       local.s.kms_secrets_key_arn != "" ? [{
