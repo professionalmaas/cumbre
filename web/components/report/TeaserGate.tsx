@@ -11,7 +11,6 @@ export interface TeaserData {
   overall: number;
   band: Band;
   verdict: string;
-  hasCredits: boolean;
 }
 
 // Shown instead of the full report until the owner unlocks it (pay + complete profile).

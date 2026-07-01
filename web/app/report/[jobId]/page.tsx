@@ -38,7 +38,6 @@ export default async function ReportPage({ params }: { params: { jobId: string }
             overall: report.scores.overall,
             band: report.scores.band,
             verdict: report.scores.verdict,
-            hasCredits: false,
           }}
         />
       </main>
