@@ -9,6 +9,10 @@ const newsreader = Newsreader({
   style: ["normal", "italic"],
   variable: "--font-newsreader",
   display: "swap",
+  // Next.js has no fallback-metric override data for Newsreader, which emits a build-time
+  // "Failed to find font override values" warning. The auto-adjusted fallback can't be
+  // generated anyway, so opt out explicitly — silences the warning, no behavior change.
+  adjustFontFallback: false,
 });
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],

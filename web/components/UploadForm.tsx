@@ -30,6 +30,17 @@ async function putWithRetry(url: string, file: File, contentType: string, tries 
   throw lastErr ?? new Error("Upload failed");
 }
 
+// Map server-action error codes to human copy. Most errors from upload.ts are already full
+// sentences (passed through); "rate_limited" is the one machine code that needs friendly text.
+// NOTE: under the teaser model, grading is free — the daily cap is abuse protection on the
+// free-to-run pipeline, NOT a paywall, so this does not push the user to /plans.
+function uploadErrorMessage(code: string): string {
+  if (code === "rate_limited") {
+    return "You've hit today's free grading limit. Come back tomorrow, or reach out if you need more.";
+  }
+  return code;
+}
+
 function Chip({ on, children, onClick }: { on: boolean; children: React.ReactNode; onClick: () => void }) {
   return (
     <button
@@ -122,8 +133,7 @@ export function UploadForm() {
       const prep = await prepareUpload(file.name);
       if (!prep.ok) {
         setBusy(false);
-        if (prep.error === "no_access") return router.push("/plans");
-        return setError(prep.error);
+        return setError(uploadErrorMessage(prep.error));
       }
 
       setStatus("Uploading…");
@@ -132,14 +142,14 @@ export function UploadForm() {
         put = await putWithRetry(prep.data.uploadUrl, file, prep.data.contentType);
       } catch {
         setBusy(false);
-        return setError("Upload didn't go through — check your connection and tap Begin ascent to retry. No credit was used.");
+        return setError("Upload didn't go through — check your connection and tap Begin ascent to retry.");
       }
       if (!put.ok) {
         setBusy(false);
         return setError(
           put.status === 403
-            ? "Your upload link expired. Tap Begin ascent to get a fresh one. No credit was used."
-            : `Upload failed (${put.status}). Tap Begin ascent to try again — no credit was used.`
+            ? "Your upload link expired. Tap Begin ascent to get a fresh one."
+            : `Upload failed (${put.status}). Tap Begin ascent to try again.`
         );
       }
 
@@ -156,8 +166,7 @@ export function UploadForm() {
       });
       if (!res.ok) {
         setBusy(false);
-        if (res.error === "no_access") return router.push("/plans");
-        return setError(res.error);
+        return setError(uploadErrorMessage(res.error));
       }
 
       // Keep the audio in-session so the report can play the highlight (never stored server-side).

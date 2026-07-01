@@ -60,10 +60,10 @@ export function Analyzing({ status, stage }: { status: string; stage: string | n
           </h1>
           <p style={{ color: "var(--muted)", marginTop: 8 }}>
             {review
-              ? "This one needs a human look before we deliver a grade. No charge yet — we'll email you when it's ready."
+              ? "This one needs a human look before we deliver a grade. We'll email you when it's ready."
               : failed
-              ? "Something went wrong on our end — no credit was used. Please try again, and reach out if it keeps happening."
-              : "The upload was rejected. No credit was used. Try a different file you own."}
+              ? "Something went wrong on our end. Please try again, and reach out if it keeps happening."
+              : "The upload was rejected. Try a different file you own."}
           </p>
           <Link href="/upload" className="btn-ghost" style={{ marginTop: 18, display: "inline-block", maxWidth: 260 }}>
             {failed ? "Try again →" : "Back to upload"}
