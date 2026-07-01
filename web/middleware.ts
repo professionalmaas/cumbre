@@ -16,6 +16,12 @@ export function middleware(request: NextRequest) {
       "connect-src 'self'",
       "https://*.stripe.com https://api.stripe.com",
       "https://*.amazoncognito.com",
+      // Browser PUTs the audio directly to the S3 uploads bucket via a presigned URL
+      // (virtual-hosted style, e.g. <bucket>.s3.us-east-1.amazonaws.com). Both the
+      // region-scoped and legacy region-less forms are allowed since the SDK may emit
+      // either. WITHOUT THIS the upload fetch is blocked by CSP and throws — surfacing
+      // as "Upload didn't go through" with no server-side error.
+      "https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com",
       `https://dataplane.rum.us-east-1.amazonaws.com`,
       `https://client.rum.us-east-1.amazonaws.com`,
     ].join(' '),
