@@ -11,10 +11,16 @@ export const dynamic = "force-static";
 export function generateMetadata({ params }: { params: { id: string } }): Metadata {
   const t = SAMPLE_TEASERS[params.id];
   if (!t) return { title: "Sample report · Cumbre" };
+  const title = `${t.title} — ${t.score}/100 on Cumbre`;
+  const description = `A sample Cumbre route report for "${t.title}" (${t.genre}): summit score ${t.score}, with a peek at the music and lyrics grades and one fix.`;
   return {
     title: `${t.title} — sample report · Cumbre`,
-    description: `A sample Cumbre route report for "${t.title}" (${t.genre}): summit score ${t.score}, with a peek at the music and lyrics grades and one fix.`,
+    description,
     alternates: { canonical: `/sample/${t.id}` },
+    // Per-sample OG/Twitter title — the score card image itself comes from the sibling
+    // opengraph-image.tsx via Next's file convention.
+    openGraph: { title, description },
+    twitter: { title, description },
   };
 }
 
