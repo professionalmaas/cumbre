@@ -16,12 +16,19 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   if (!code) return NextResponse.redirect(`${origin}/login?error=missing_code`);
 
+  // The public /plans page starts sign-in with state="plan:<id>" so the user lands back on
+  // the right checkout after auth. Allowlist-mapped to fixed paths only (never a raw
+  // redirect from state — that would be an open redirect).
+  const state = searchParams.get("state") ?? "";
+  const planDest =
+    state === "plan:summit" ? "/plans?plan=summit" : state === "plan:season" ? "/plans?plan=season" : null;
+
   try {
     const tokens = await exchangeCode(code);
     const { sub, email } = await verifyIdToken(tokens.id_token);
     await ensureUser(sub, email);
     await createSession({ sub, email });
-    return NextResponse.redirect(`${origin}/`);
+    return NextResponse.redirect(`${origin}${planDest ?? "/"}`);
   } catch (err) {
     console.error("auth callback failed", err);
     return NextResponse.redirect(`${origin}/login?error=auth`);

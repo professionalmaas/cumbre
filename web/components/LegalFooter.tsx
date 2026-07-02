@@ -17,6 +17,10 @@ export function LegalFooter() {
     >
       © {new Date().getFullYear()} Cumbre · proprietary scoring &amp; methodology · AI feedback, not
       A&amp;R advice, no guarantee · audio deleted after analysis ·{" "}
+      <Link href="/plans#faq" style={{ textDecoration: "underline", color: "var(--muted)" }}>
+        FAQ
+      </Link>{" "}
+      ·{" "}
       <Link href="/legal" style={{ textDecoration: "underline", color: "var(--muted)" }}>
         full terms
       </Link>
