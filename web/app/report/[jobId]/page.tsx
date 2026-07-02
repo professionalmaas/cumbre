@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin";
 import { Analyzing } from "@/components/Analyzing";
 import { ReportClient } from "@/components/report/ReportClient";
 import { TeaserGate } from "@/components/report/TeaserGate";
+import { TrackEvent } from "@/components/TrackEvent";
 
 export const dynamic = "force-dynamic";
 
@@ -50,12 +51,15 @@ export default async function ReportPage({ params }: { params: { jobId: string }
   ]);
 
   return (
-    <ReportClient
-      report={report}
-      jobId={params.jobId}
-      filename={job.original_filename}
-      feedback={feedback}
-      shareToken={shareToken}
-    />
+    <>
+      <TrackEvent event="report_delivered" />
+      <ReportClient
+        report={report}
+        jobId={params.jobId}
+        filename={job.original_filename}
+        feedback={feedback}
+        shareToken={shareToken}
+      />
+    </>
   );
 }

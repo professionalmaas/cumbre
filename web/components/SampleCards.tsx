@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { track } from "@/lib/analytics";
 
 interface Sample {
   id: string;
@@ -86,7 +87,12 @@ export function SampleCards() {
     Object.entries(refs.current).forEach(([k, el]) => {
       if (k !== id && el) el.pause();
     });
-    a.play().then(() => setPlaying(id)).catch(() => setPlaying(null));
+    a.play()
+      .then(() => {
+        setPlaying(id);
+        track("sample_play", { sample: id });
+      })
+      .catch(() => setPlaying(null));
   }
 
   return (
@@ -125,6 +131,8 @@ export function SampleCards() {
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <button
               onClick={() => toggle(s.id)}
+              aria-label={playing === s.id ? `Pause preview of ${s.title}` : `Play preview of ${s.title}`}
+              aria-pressed={playing === s.id}
               style={{
                 display: "inline-flex",
                 alignItems: "center",

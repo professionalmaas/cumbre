@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 
 const PLANS = [
   {
     id: "summit",
     label: "Summit Pass",
     price: "$9",
-    sub: "this song",
-    bullets: ["One full analysis", "Every score, fix & the highlight", "Yours to keep"],
+    sub: "one-time",
+    bullets: ["0–100 summit score", "Music + Lyrics grades", "Top 3 fixes", "Energy map + mix report"],
     cta: "Continue — pay $9 once",
     popular: false,
   },
@@ -17,7 +18,7 @@ const PLANS = [
     label: "Season Pass",
     price: "$19",
     sub: "/ month",
-    bullets: ["Unlimited analyses", "Re-climb every version", "Cancel anytime"],
+    bullets: ["Unlimited reports", "Re-score after your fixes", "Track your climb over time", "Cancel anytime"],
     cta: "Continue — subscribe $19/mo",
     popular: true,
   },
@@ -29,16 +30,19 @@ export interface PlansClientProps {
   paymentLinks?: { summit?: string; season?: string };
   userSub?: string;
   userEmail?: string | null;
+  /** Pre-select a plan (the public /plans page carries the choice through Cognito state). */
+  initialSelected?: "summit" | "season";
 }
 
-export function PlansClient({ paymentLinks, userSub, userEmail }: PlansClientProps = {}) {
-  const [selected, setSelected] = useState("season");
+export function PlansClient({ paymentLinks, userSub, userEmail, initialSelected }: PlansClientProps = {}) {
+  const [selected, setSelected] = useState<string>(initialSelected ?? "season");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   async function pay() {
     setError("");
     setBusy(true);
+    track("checkout_start", { plan: selected });
 
     // Preferred path: redirect to the owner's hosted Stripe Payment Link, carrying the
     // user id as client_reference_id (the webhook keys entitlement off it) + prefilled

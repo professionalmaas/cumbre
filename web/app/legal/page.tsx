@@ -28,7 +28,7 @@ export default function LegalPage() {
   return (
     <main className="frame">
       <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href="/" className="btn-ghost" style={{ width: 36, height: 36, padding: 0, borderRadius: 999 }}>
+        <Link href="/" className="btn-ghost" aria-label="Back to home" style={{ width: 36, height: 36, padding: 0, borderRadius: 999 }}>
           ‹
         </Link>
         <Brand />

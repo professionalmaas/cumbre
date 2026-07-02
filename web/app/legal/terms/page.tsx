@@ -29,7 +29,7 @@ export default function TermsPage() {
   return (
     <main className="frame">
       <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href="/legal" className="btn-ghost" style={{ width: 36, height: 36, padding: 0, borderRadius: 999 }}>
+        <Link href="/legal" className="btn-ghost" aria-label="Back to legal overview" style={{ width: 36, height: 36, padding: 0, borderRadius: 999 }}>
           ‹
         </Link>
         <Brand />
