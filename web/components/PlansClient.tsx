@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 
 const PLANS = [
   {
@@ -41,6 +42,7 @@ export function PlansClient({ paymentLinks, userSub, userEmail, initialSelected 
   async function pay() {
     setError("");
     setBusy(true);
+    track("checkout_start", { plan: selected });
 
     // Preferred path: redirect to the owner's hosted Stripe Payment Link, carrying the
     // user id as client_reference_id (the webhook keys entitlement off it) + prefilled

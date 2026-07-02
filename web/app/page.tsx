@@ -20,6 +20,41 @@ const STEPS = [
   { n: 3, title: "Get the route to the summit", note: "A 0–100 summit score, your Top 3 fixes, and the exact moves to climb higher." },
 ];
 
+// The twelve holds — real rubric names only. Ten are the report's music/lyrics subscore
+// labels (lib/report.ts subscores); Market fit and Energy arc are the report's marketFit
+// and structure/energy-map sections. Do NOT add names that don't appear in the report.
+const HOLDS = [
+  "Hook strength",
+  "Production",
+  "Melody",
+  "Groove",
+  "Mix balance",
+  "Rhyme craft",
+  "Imagery",
+  "Emotional pull",
+  "Memorability",
+  "Story",
+  "Market fit",
+  "Energy arc",
+];
+
+// SoftwareApplication JSON-LD with both offers — pricing is visible to crawlers even
+// though checkout is behind sign-in.
+const APP_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Cumbre",
+  applicationCategory: "MultimediaApplication",
+  operatingSystem: "Web",
+  url: "https://getcumbre.com",
+  description:
+    "An AI song coach: upload a track and get a genre-aware, fame-blind craft grade (Music + Lyrics) plus your Top 3 fixes.",
+  offers: [
+    { "@type": "Offer", name: "Summit Pass", price: "9", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Season Pass", price: "19", priceCurrency: "USD" },
+  ],
+};
+
 export default function EntryPage() {
   return (
     <>
@@ -27,6 +62,7 @@ export default function EntryPage() {
           fully SSR'd (SEO + works with JS off); LandingIntro is the only client island and
           dissolves on Enter. */}
       <LandingIntro />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_JSONLD) }} />
       <main className="frame">
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Brand />
@@ -70,6 +106,47 @@ export default function EntryPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Differentiators — fame-blind + genre-aware were meta-description-only; surface them. */}
+      <div className="eyebrow" style={{ marginTop: 26 }}>
+        How we grade
+      </div>
+      <div style={{ marginTop: 8, display: "grid", gap: 12 }}>
+        <div>
+          <b style={{ display: "block", marginBottom: 3 }}>Fame-blind by design.</b>
+          <span style={{ color: "var(--muted)", fontSize: 14 }}>
+            Your demo is scored on the same rubric as a chart record. No name, no follower count, no
+            bias — just the craft.
+          </span>
+        </div>
+        <div>
+          <b style={{ display: "block", marginBottom: 3 }}>Genre-aware.</b>
+          <span style={{ color: "var(--muted)", fontSize: 14 }}>
+            A trap song isn&apos;t graded like a folk ballad. Every score is measured against the
+            norms of the genre you pick.
+          </span>
+        </div>
+        <div>
+          <b style={{ display: "block", marginBottom: 6 }}>The twelve holds.</b>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {HOLDS.map((h) => (
+              <span
+                key={h}
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  color: "var(--muted)",
+                  border: "1px solid var(--line-soft)",
+                  borderRadius: 999,
+                  padding: "4px 10px",
+                }}
+              >
+                {h}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="eyebrow" style={{ marginTop: 22 }}>

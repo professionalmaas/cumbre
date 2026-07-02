@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { startMagicLink } from "@/lib/actions/magicLink";
+import { track } from "@/lib/analytics";
 
 // Primary sign-in path: one email field, no password to invent. Cognito CUSTOM_AUTH under
 // the hood (web/lib/actions/magicLink.ts) — this component only drives the UI state machine.
@@ -13,6 +14,7 @@ export function MagicLinkForm() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    track("login_start", { method: "magic_link" });
     startTransition(async () => {
       const res = await startMagicLink(email);
       if (res.ok) {

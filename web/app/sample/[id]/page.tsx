@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
+import { TrackEvent } from "@/components/TrackEvent";
 import { SAMPLE_TEASERS } from "@/lib/samples";
 import { bandLabel } from "@/lib/report";
 
@@ -42,6 +43,7 @@ export default function SampleTeaserPage({ params }: { params: { id: string } })
 
   return (
     <main className="frame">
+      <TrackEvent event="sample_report_view" data={{ sample: t.id }} />
       <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <Link href="/" className="btn-ghost" aria-label="Back to home" style={{ width: 36, height: 36, padding: 0, borderRadius: 999 }}>
           ‹
@@ -167,6 +169,11 @@ export default function SampleTeaserPage({ params }: { params: { id: string } })
         Climb your own song →
       </Link>
 
+      {/* P2-4 guard line — extends the shared footer disclaimer for the sample pages only. */}
+      <p style={{ textAlign: "center", color: "var(--faint2, #8f8168)", fontSize: 10, lineHeight: 1.6, marginTop: 18, marginBottom: -12 }}>
+        Sample tracks are used for demonstration and commentary; all rights belong to their
+        respective owners. Cumbre never stores user audio.
+      </p>
       <LegalFooter />
     </main>
   );

@@ -6,6 +6,7 @@ import { Brand } from "@/components/Brand";
 import { PlansClient } from "@/components/PlansClient";
 import { PlansFaq } from "@/components/PlansFaq";
 import { LegalFooter } from "@/components/LegalFooter";
+import { TrackEvent } from "@/components/TrackEvent";
 
 // PUBLIC pricing page — no auth wall (a login redirect here was a conversion ship-blocker;
 // the homepage CTA lands on visible prices). Still dynamic: signed-in users get the live
@@ -87,6 +88,7 @@ export default async function PlansPage({ searchParams }: { searchParams: { plan
 
   return (
     <main className="frame">
+      <TrackEvent event="plans_view" />
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link
