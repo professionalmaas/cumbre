@@ -1,0 +1,5 @@
+# One-off: apply 006_teaser_paywall_magic_link.sql via ECS Fargate in the VPC.
+# Build context = cumbre repo root.
+FROM postgres:16-alpine
+COPY db/006_teaser_paywall_magic_link.sql /migrations/006.sql
+ENTRYPOINT ["sh", "-c", "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f /migrations/006.sql && echo '>>> 006 applied'"]

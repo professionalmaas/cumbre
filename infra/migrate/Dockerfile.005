@@ -1,0 +1,5 @@
+# One-off: apply 005_admin_tables.sql + refresh dashboard MVs via ECS Fargate in the VPC.
+# Build context = cumbre repo root.
+FROM postgres:16-alpine
+COPY db/005_admin_tables.sql /migrations/005.sql
+ENTRYPOINT ["sh", "-c", "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f /migrations/005.sql && psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -c \"REFRESH MATERIALIZED VIEW mv_jobs_by_day; REFRESH MATERIALIZED VIEW mv_review_queue_stats;\" && echo '>>> 005 applied + MVs refreshed'"]
