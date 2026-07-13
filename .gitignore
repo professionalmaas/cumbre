@@ -40,3 +40,9 @@ docs/design_v2/assets/*.mp3
 
 # local agent config — never tracked
 .claude/
+
+# terraform local run artifacts
+infra/terraform/.last-*.txt
+infra/terraform/*.log
+infra/terraform/plan-out.txt
+infra/terraform/tfplan
