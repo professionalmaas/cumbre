@@ -3,7 +3,7 @@
 
   python worker/run_local.py <audio.wav> [genre] [depth] [lens]
 
-Reads ANTHROPIC_API_KEY from the environment for the Claude Haiku A&R layer; if it's
+Reads ANTHROPIC_API_KEY from the environment for the A&R layer; if it's
 absent the report still generates via the deterministic heuristic fallback. This calls
 the same `cumbre_report.build_report` the Fargate worker uses — so it proves the real
 engine + librosa structure/highlight + A&R copy without any AWS, Step Functions, or S3.
@@ -40,7 +40,7 @@ def main() -> int:
 
     have_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
     print(f"# building report for {audio}  (genre={genre} depth={depth} lens={lens}; "
-          f"A&R = {'Claude Haiku' if have_key else 'heuristic fallback — set ANTHROPIC_API_KEY for the real copy'})",
+          f"A&R = {'the A&R model' if have_key else 'heuristic fallback — set ANTHROPIC_API_KEY for the real copy'})",
           file=sys.stderr)
 
     report = cr.build_report(audio, genre, depth, lens, 2026)

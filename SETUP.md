@@ -6,7 +6,7 @@
 ## Repository layout
 ```
 cumbre/
-  CLAUDE.md              # auto-loaded rules for Claude Code (this repo's, not home's)
+  AGENTS.md              # auto-loaded rules for agents in this repo (not the home repo's)
   README.md  SETUP.md
   .env.example  .gitignore
   ml/                    # the Python engine + fame-blind training pipeline (owned, tested)
@@ -21,7 +21,7 @@ cumbre/
     schema.sql           # the database contract (apply in Supabase SQL editor)
   lib/inngest/
     analyze-song.ts      # the automated-loop skeleton (human-gate steps)
-  web/                   # Next.js app — Claude Code scaffolds this (see docs/PHASE1_CHECKLIST.md)
+  web/                   # Next.js app (see docs/PHASE1_CHECKLIST.md)
     README.md
   docs/
     Cumbre_Build_Spec.md       # SOURCE OF TRUTH
@@ -60,8 +60,8 @@ python train_fameblind.py spotify_12m.csv spotify_data.csv \
 The `.pkl` is git-ignored (it's large). For production it's uploaded to object storage and the
 Modal worker downloads it — see `worker/modal_app.py`.
 
-## Then open `cumbre/` in Cursor / Claude Code and say:
-> "Read CLAUDE.md and docs/Cumbre_Build_Spec.md, then work through docs/PHASE1_CHECKLIST.md.
+## Then open `cumbre/` in Cursor and say:
+> "Read AGENTS.md and docs/Cumbre_Build_Spec.md, then work through docs/PHASE1_CHECKLIST.md.
 >  The DB contract is supabase/schema.sql, the loop skeleton is lib/inngest/analyze-song.ts,
 >  and the scoring worker is worker/modal_app.py wrapping ml/cumbre_scoring.py. Start with
 >  setup + Supabase + upload (checklist 0–2) and open a PR."

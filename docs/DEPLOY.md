@@ -11,7 +11,7 @@ model. Full mechanics are in `docs/AWS_RUNBOOK.md`; this is the short list.
    - **Summit Pass** — one-time, $9 → `STRIPE_PRICE_SUMMIT`
    - **Season Pass** — recurring, $19/mo → `STRIPE_PRICE_SEASON`
    - a webhook endpoint → `STRIPE_WEBHOOK_SECRET`, and your `STRIPE_SECRET_KEY`.
-3. **Anthropic** — an API key for the Claude Haiku A&R layer → `ANTHROPIC_API_KEY`.
+3. **Anthropic** — an API key for the A&R layer → `ANTHROPIC_API_KEY`.
 4. **OpenAI** — key (lyrics transcription, Phase 2) → `OPENAI_API_KEY`.
 5. **ACRCloud** — host/key/secret for the copyright gate (optional in dev; absent ⇒ "Allow").
 6. **The ML model** — see "Model prep" below.
@@ -35,7 +35,7 @@ That's it. The kill switch (`KILL_SWITCH_SCORING=on`) and the AUTO/review band
 The rich report is produced by three layers; only the **fame-blind model** is an offline artifact:
 - **Audio features + music/lyrics scores** — the in-house engine (`ml/`), already tested.
 - **Structure energy + best-moment highlight** — librosa MIR in `worker/cumbre_report.py`.
-- **Verdict, market-fit, readiness, comparables, keep, fixes-with-impact** — **Claude Haiku 4.5**
+- **Verdict, market-fit, readiness, comparables, keep, fixes-with-impact** — **the A&R model**
   in `worker/cumbre_report.py` (needs `ANTHROPIC_API_KEY`; falls back to a deterministic heuristic
   if the key is absent, so the report never fails).
 - **Internal fame-blind hit score** (`CUMBRE_fameblind_model.pkl`) — secondary/internal only.

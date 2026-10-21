@@ -1,8 +1,8 @@
-# Cumbre — Technical Build Spec (for Claude Code)
+# Cumbre — Technical Build Spec
 
 *Get your song to the summit.*
-Hand this file to Claude Code as the source of truth. It is written to be implemented
-phase by phase. Keep it in the repo as `/docs/BUILD_SPEC.md` and reference it from `CLAUDE.md`.
+This file is the source of truth. It is written to be implemented
+phase by phase. Keep it in the repo as `/docs/BUILD_SPEC.md` and reference it from `AGENTS.md`.
 
 ---
 
@@ -177,7 +177,7 @@ Start with the AUTO band tight (review more); widen as task types prove reliable
 
 ## 4. The Modal worker (Python)
 
-Wrap the prototyped engine. Module signatures Claude Code should implement:
+Wrap the prototyped engine. Module signatures to implement:
 
 ```python
 # modal_app.py
@@ -281,19 +281,19 @@ $39.99 per month (5 / 20 / 100 analyses).
 
 ## 9. Repo layout (suggested)
 ```
-/app                 Next.js (routes, UI from Claude Design handoff)
+/app                 Next.js (routes, UI from the design handoff)
 /lib/inngest         analyze.song function + steps
 /lib/stripe          checkout, webhooks, credit ledger
 /worker              Modal app: modal_app.py, cumbre_engine.py, lyrics.py, scoring.py
 /models              refit scaler + KNN artifacts (versioned)
 /docs/BUILD_SPEC.md  this file
-CLAUDE.md            project instructions -> points Claude Code here
+AGENTS.md            project instructions
 ```
 
-## 10. First tasks for Claude Code
+## 10. First implementation tasks
 1. Scaffold Next.js + Supabase (auth, schema from §2, RLS, presigned upload).
 2. Stripe Checkout + credit ledger (idempotent webhook).
 3. Inngest `analyze.song` skeleton with the human-gate matrix (§3), stubs for each step.
 4. Modal `extract` wrapping `cumbre_engine` (§4); wire to the loop.
 5. Refit script: extract features for training corpus → refit StandardScaler+KNN → save (§5).
-6. Minimal results page rendering Top-3-Fixes + two scores (from Claude Design handoff).
+6. Minimal results page rendering Top-3-Fixes + two scores (from the design handoff).

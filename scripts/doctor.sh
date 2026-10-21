@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cumbre doctor — paste output to Claude/Cowork for status check
+# Cumbre doctor — paste output to a reviewer for status check
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

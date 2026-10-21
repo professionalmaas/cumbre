@@ -35,7 +35,7 @@ The teaser/paywall flip is LIVE and covers more of this roadmap than the origina
 4. **Abuse limits, tightened** — rate limit exists (5/day/user). Add: per-IP signup throttling
    (magic-link makes throwaway accounts cheap once SES is live), and consider 1 free unlock per
    *verified email* rather than per account. The analysis pipeline costs real money per run
-   (Fargate + OpenAI + ACRCloud + Claude) even when unpaid.
+   (Fargate + OpenAI + ACRCloud + A&R) even when unpaid.
 5. **Funnel instrumentation to tune it** — the RUM events shipped in P2-3 (`sample_play`,
    `sample_report_view`, `plans_view`, `login_start`, `checkout_start`, `report_delivered`)
    give the baseline. Add `teaser_view` and `unlock_start`/`unlock_done` when building this

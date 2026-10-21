@@ -1,4 +1,4 @@
-# Cumbre doctor — paste output to Claude/Cowork for status check
+# Cumbre doctor — paste output to a reviewer for status check
 $ErrorActionPreference = "Continue"
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $root

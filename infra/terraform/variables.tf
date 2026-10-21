@@ -148,7 +148,7 @@ variable "anthropic_api_key" {
   type        = string
   sensitive   = true
   default     = ""
-  description = "Optional. Anthropic key for the Claude Haiku A&R layer; blank => deterministic heuristic A&R fallback."
+  description = "Optional. Anthropic key for the A&R layer; blank => deterministic heuristic A&R fallback."
 }
 
 variable "acrcloud_host" {

@@ -30,15 +30,21 @@ export function middleware(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests",
-  ].join('; ')
+  ]
+  // On http://localhost this directive rewrites audio/image requests to https, and nothing
+  // is listening there, so sample playback fails. Keep it for every public host.
+  const host = request.nextUrl.hostname
+  if (host !== "localhost" && host !== "127.0.0.1") {
+    csp.push("upgrade-insecure-requests")
+  }
+  const cspHeader = csp.join('; ')
 
   // Attach nonce to the request so Next.js propagates it to its own inline hydration scripts.
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-nonce', nonce)
 
   const response = NextResponse.next({ request: { headers: requestHeaders } })
-  response.headers.set('Content-Security-Policy', csp)
+  response.headers.set('Content-Security-Policy', cspHeader)
 
   return response
 }

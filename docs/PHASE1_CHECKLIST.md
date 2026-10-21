@@ -5,7 +5,7 @@ fixes — with the human involved only on flagged items. Drop this in the repo; 
 in PRs. Full detail in `docs/Cumbre_Build_Spec.md`.
 
 ## 0. Project setup
-- [ ] Next.js (App Router, TypeScript) on Vercel; repo + CI; `CLAUDE.md` at root.
+- [ ] Next.js (App Router, TypeScript) on Vercel; repo + CI; `AGENTS.md` at root.
 - [ ] Env scaffolding: `.env.example` with `SUPABASE_*`, `STRIPE_*`, `OPENAI_API_KEY`,
       `ACRCLOUD_*`, `MODAL_*`, `INNGEST_*`. Never commit real secrets.
 
@@ -43,7 +43,7 @@ in PRs. Full detail in `docs/Cumbre_Build_Spec.md`.
 - [ ] `charge`: idempotent (key=jobId), wrapped in circuit breaker + kill-switch env flag.
 - [ ] `deliver`: write `results`, mark `jobs.done`, notify user.
 
-## 6. Results page (from the Claude Design handoff)
+## 6. Results page (from the design handoff)
 - [ ] Render: summit/Music score gauge, score, **Top 3 Fixes** (hero), subscore bars,
       extracted-features grid, AI-feedback disclaimer footer.
 - [ ] Poll/subscribe `jobs`/`results` for completion. Show the "analyzing" state meanwhile.

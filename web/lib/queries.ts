@@ -66,7 +66,7 @@ export async function setJobExecution(jobId: string, executionArn: string): Prom
 }
 
 // Abuse guard for the free-to-run analysis pipeline: each run costs real money (worker
-// compute + OpenAI/ACRCloud/Claude) regardless of whether the report ends up paid-unlocked.
+// compute + OpenAI/ACRCloud/A&R) regardless of whether the report ends up paid-unlocked.
 export async function countRecentJobs(userId: string, hours: number): Promise<number> {
   const row = await one<{ n: string }>(
     `select count(*)::int as n from jobs where user_id = $1 and created_at > now() - ($2 || ' hours')::interval`,

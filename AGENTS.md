@@ -1,7 +1,7 @@
-# CLAUDE.md — Cumbre
+# AGENTS.md — Cumbre
 
 > This is a **standalone repository** (not part of the `home` monorepo — ignore any home-repo
-> git guardrails). Auto-loaded instructions for Claude Code. Read `docs/Cumbre_Build_Spec.md`
+> git guardrails). Auto-loaded project instructions. Read `docs/Cumbre_Build_Spec.md`
 > in full before building — it is the source of truth. This file is the short version + rules.
 >
 > **⚡ Implemented stack is AWS-native** (re-platformed from the spec's Supabase/Inngest/Modal):
@@ -94,8 +94,8 @@ This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks li
 ## Stack (LIVE — AWS-native)
 Next.js (App Router, ECS Fargate) · Cognito (OAuth + Google) · RDS Postgres · S3 (presigned PUT
 browser uploads) · Step Functions (analysis loop) · Lambda steps + Fargate worker · Stripe
-Checkout + Postgres credit ledger · OpenAI moderation + Whisper · ACRCloud fingerprint · Claude
-Haiku (lyric feedback). Platform Terraform in `Projects/infra/terraform/` (shared hub); app layer
+Checkout + Postgres credit ledger · OpenAI moderation + Whisper · ACRCloud fingerprint · A&R
+copy (lyric feedback). Platform Terraform in `Projects/infra/terraform/` (shared hub); app layer
 in `infra/terraform/` (this repo). Live at `https://getcumbre.com`. AWS account: `110844251073`.
 
 ## Architecture rule that drives everything
@@ -106,6 +106,6 @@ The audio job takes seconds-to-minutes. The ML work MUST run in the **Fargate wo
 User uploads → S3 presigned PUT → Step Functions `hub-cumbre-prd-analysis` → Lambda steps:
 validate → moderate (OpenAI) → fingerprint (ACRCloud) → **Fargate worker** (`worker/aws_entry.py`:
 librosa features + `ml/cumbre_scoring.analyze_song` + PKL model from S3 + numpy casts) →
-feedback (Claude Haiku) → **charge** (Stripe, idempotent, after success) → deliver results.
+feedback (the A&R model) → **charge** (Stripe, idempotent, after success) → deliver results.
 Confidence gate at SFN `ConfidenceChoice` (`low_confidence_threshold = 0.0` → no manual-review
 gate; set > 0.0 to enable). Results stored in RDS `jobs` table.

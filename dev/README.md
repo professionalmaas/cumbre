@@ -76,7 +76,7 @@ Copy-paste source: **`.env.dev.example`** (repo root) or the DEV_MODE block at t
   comparables come from a deterministic **heuristic fallback** in `worker/cumbre_report.py`,
   so a full report still renders end to end.
 - **`ANTHROPIC_API_KEY` (optional, recommended)** — the only thing worth providing. With it,
-  the A&R copy is written by Claude Haiku instead of the heuristic. Set it in `web/.env.local`
+  the A&R copy is written by the A&R model instead of the heuristic. Set it in `web/.env.local`
   (the inline runner passes the web process env through to the Python worker).
 
 Everything else (Docker Postgres, dev user, local storage, inline worker) is provided by the
