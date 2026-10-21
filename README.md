@@ -6,6 +6,19 @@ Spotify API, no rented model weights.
 
 **This is a standalone repo.** Don't nest it in another repo. Start with **`SETUP.md`**.
 
+## Run it locally
+
+No cloud account and no API key. Docker has to be running. From `web/`:
+
+```bash
+npm install
+# PowerShell:  Copy-Item ..\.env.dev.example .env.local
+# macOS/Linux: cp ../.env.dev.example .env.local
+npm run dev:all
+```
+
+Open http://localhost:3000 and sign in as the dev user. The home-page previews play the original clips in `web/public/samples/`. Upload analysis also needs the Python packages in `worker/requirements.txt`. The full loop is in **`dev/README.md`**.
+
 > ### 🎨 UI = the final design handoff (`docs/design_v2/`).
 > The app implements the 6-screen experience: **Sample → Plans (pay-first) → Upload → Analyzing →
 > Report → Profile**, in the warm ember/gold design system (Newsreader/Hanken/Space Mono). The rich

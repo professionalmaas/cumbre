@@ -39,7 +39,7 @@ cd web && npm install
 ```bash
 # from web/
 npm run dev:db        # start Docker Postgres (docker compose -f ../docker-compose.dev.yml up -d)
-npm run dev:setup     # apply db/001 -> 002 -> 003 into the container (bash ../dev/init-db.sh)
+npm run dev:setup     # apply db/001 -> 002 -> 003 into the container (node ../dev/init-db.mjs)
 npm run dev           # start Next on http://localhost:3000
 # …or all three at once:
 npm run dev:all
@@ -64,8 +64,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ANTHROPIC_API_KEY=                  # OPTIONAL — see below
 
 # Optional: public Stripe Payment Links (used by /plans if you want to exercise checkout)
-NEXT_PUBLIC_STRIPE_SUMMIT_URL=https://buy.stripe.com/bJe6oG5WL8GI7flbQJawo01
-NEXT_PUBLIC_STRIPE_SEASON_URL=https://buy.stripe.com/fZufZgad13mo9nt081awo00
+NEXT_PUBLIC_STRIPE_SUMMIT_URL=
+NEXT_PUBLIC_STRIPE_SEASON_URL=
 ```
 
 Copy-paste source: **`.env.dev.example`** (repo root) or the DEV_MODE block at the top of

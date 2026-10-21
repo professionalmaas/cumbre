@@ -7,7 +7,7 @@
 
 export interface ScoreCardOgProps {
   title: string;
-  subtitle: string; // e.g. "Tame Impala, JENNIE · Pop"
+  subtitle: string; // e.g. "Cumbre demo · Pop"
   score?: number; // omit for a generic branded card (no score row)
   bandLabel: string; // "SUMMIT" | "ASCENDING" | "BASE CAMP" (or a brand word on generic cards)
   kicker?: string; // small eyebrow, defaults to "SAMPLE ROUTE REPORT"

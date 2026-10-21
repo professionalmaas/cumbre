@@ -52,8 +52,8 @@ If you launch **without** the `.pkl`, the worker simply skips the internal hit s
 user-facing report (gauge, fixes, mix, comparables, highlight) still renders.
 
 ## Before public launch (don't skip)
-- **Swap the sample clips** in `web/public/samples/` — `dracula.mp3` (Tame Impala/JENNIE) and
-  `janice.mp3` (Drake) are **copyrighted**. Use cleared/owned demo clips for the public previews.
+- The public previews are the original clips `web/public/samples/ridge.wav` and `lantern.wav`.
+  Do not commit commercial recordings over them.
 - Register a **DMCA agent**, publish ToS/Privacy with the "audio never stored" guarantee (it's real —
   the deliver Lambda deletes the S3 object and the bucket has a 1-day lifecycle backstop).
 - Run `/deploy-ready` (the PRR) — the platform already gives circuit-breaker rollback, smoke test,

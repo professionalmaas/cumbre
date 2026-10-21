@@ -18,10 +18,10 @@ export interface SampleTeaser {
 }
 
 export const SAMPLE_TEASERS: Record<string, SampleTeaser> = {
-  dracula: {
-    id: "dracula",
-    title: "Dracula (JENNIE Remix)",
-    artist: "Tame Impala, JENNIE",
+  ridge: {
+    id: "ridge",
+    title: "Ridge Line",
+    artist: "Cumbre demo",
     genre: "Pop",
     score: 81,
     band: "summit",
@@ -35,10 +35,10 @@ export const SAMPLE_TEASERS: Record<string, SampleTeaser> = {
     ],
     lockedCount: 11,
   },
-  janice: {
-    id: "janice",
-    title: "Janice STFU",
-    artist: "Drake",
+  lantern: {
+    id: "lantern",
+    title: "Lantern Pocket",
+    artist: "Cumbre demo",
     genre: "Hip-Hop",
     score: 66,
     band: "ascending",

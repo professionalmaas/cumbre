@@ -130,6 +130,18 @@ variable "stripe_price_summit" {
   description = "Optional: Summit price ID for the Checkout-Sessions fallback. Not needed when the hosted Payment Link (NEXT_PUBLIC_STRIPE_SUMMIT_URL) is used."
 }
 
+variable "stripe_summit_url" {
+  type        = string
+  default     = ""
+  description = "Public Stripe Payment Link for the Summit pass. Not a secret. Empty hides hosted checkout."
+}
+
+variable "stripe_season_url" {
+  type        = string
+  default     = ""
+  description = "Public Stripe Payment Link for the Season pass. Not a secret. Empty hides hosted checkout."
+}
+
 variable "stripe_price_season" {
   type        = string
   sensitive   = true

@@ -15,28 +15,27 @@ interface Sample {
   src: string;
 }
 
-// NOTE: sample clips are copyrighted (Tame Impala/JENNIE, Drake) — replace with cleared/owned
-// demo clips before any public launch (see docs/design_v2/README.md §Assets).
+// Original demo clips shipped in web/public/samples. Do not point these at commercial recordings.
 const SAMPLES: Sample[] = [
   {
-    id: "dracula",
-    title: "Dracula (JENNIE Remix)",
-    artist: "Tame Impala, JENNIE",
+    id: "ridge",
+    title: "Ridge Line",
+    artist: "Cumbre demo",
     genre: "Pop",
     score: 81,
     band: "SUMMIT",
     takeaway: "A summit-grade hook and a mix that translates everywhere.",
-    src: "/samples/dracula.mp3",
+    src: "/samples/ridge.wav",
   },
   {
-    id: "janice",
-    title: "Janice STFU",
-    artist: "Drake",
+    id: "lantern",
+    title: "Lantern Pocket",
+    artist: "Cumbre demo",
     genre: "Hip-Hop",
     score: 66,
     band: "ASCENDING",
     takeaway: "Strong pocket and presence — the back half needs one more lift.",
-    src: "/samples/janice.mp3",
+    src: "/samples/lantern.wav",
   },
 ];
 

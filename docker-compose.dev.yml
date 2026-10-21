@@ -2,7 +2,7 @@
 # orchestration, worker) runs on localhost with no AWS. See dev/README.md.
 #
 #   docker compose -f docker-compose.dev.yml up -d
-#   npm --prefix web run dev:setup     # applies db/001 -> 002 -> 003
+#   npm --prefix web run dev:setup     # applies db/001 -> 002 -> 003 (no bash required)
 #
 # Port 55432 on the host (avoids clashing with a system Postgres on 5432).
 services:
