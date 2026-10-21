@@ -1,8 +1,13 @@
 import { ReportView } from "@/components/report/ReportView";
 import { SAMPLE_REPORT } from "@/lib/report";
 
-// Public sample render of the Report screen (the contract's "Higher Ground" example).
-// Used to preview/QA the design locally without a live backend.
+// Public sample render of the Report screen. The highlight uses the short original
+// demo clip so the play control works without a user upload.
 export default function SampleReportPage() {
-  return <ReportView report={SAMPLE_REPORT} filename={SAMPLE_REPORT.song.title} audioUrl={null} />;
+  const report = {
+    ...SAMPLE_REPORT,
+    song: { ...SAMPLE_REPORT.song, title: "Ridge Line", durationSec: 8 },
+    highlight: { startSec: 0.4, endSec: 6, label: "demo peak" },
+  };
+  return <ReportView report={report} filename={report.song.title} audioUrl="/samples/ridge.wav" />;
 }

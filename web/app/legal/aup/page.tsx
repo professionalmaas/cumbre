@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
 
-// TODO(legal): Manatt, Phelps & Phillips, LLP to finalize; ensure legal@getcumbre.com inbox is live.
+// Sample policy copy for the portfolio demo. Not a live service and not legal advice.
 export const metadata: Metadata = {
   title: "Acceptable Use Policy · Cumbre",
   description:
@@ -74,7 +74,7 @@ export default function AupPage() {
         <Link href="/legal/dmca" style={{ textDecoration: "underline", color: "var(--muted)" }}>
           DMCA policy
         </Link>{" "}
-        — will result in termination. Report abuse to legal@getcumbre.com.
+        — will result in termination. Report abuse to demo@example.com.
       </Section>
 
       <LegalFooter />

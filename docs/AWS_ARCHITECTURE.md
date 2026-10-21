@@ -1,7 +1,7 @@
 # Cumbre on AWS — architecture & contract
 
 This is the source of truth for the **AWS-native** build (re-platformed from the spec's
-Supabase/Inngest/Modal stack). It runs on the shared platform in `professionalmaas/home`
+Supabase/Inngest/Modal stack). The shared platform it sits on is not included in this repo.
 (`infra/terraform/shared` + `modules/app`). The product behavior is unchanged — only the
 infrastructure is AWS-native.
 

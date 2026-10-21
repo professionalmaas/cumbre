@@ -91,7 +91,7 @@ export function ScoreCardOg({ title, subtitle, score, bandLabel, kicker = "SAMPL
       <div style={{ display: "flex", fontSize: 28, color: "#a89a82", marginTop: 10 }}>{subtitle}</div>
 
       <div style={{ display: "flex", fontSize: 26, color: "#fb7a3c", marginTop: 30 }}>
-        How high does your song climb? → getcumbre.com
+        How high does your song climb?
       </div>
     </div>
   );

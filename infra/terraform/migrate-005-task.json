@@ -4,16 +4,16 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::110844251073:role/hub-cumbre-prd-ecs-execution",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/hub-cumbre-prd-ecs-execution",
   "containerDefinitions": [
     {
       "name": "migrate",
-      "image": "110844251073.dkr.ecr.us-east-1.amazonaws.com/hub-cumbre-prd:migrate-005",
+      "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/hub-cumbre-prd:migrate-005",
       "essential": true,
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:110844251073:secret:hub-cumbre-prd/secrets-wQNDw3:DATABASE_URL::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:hub-cumbre-prd/secrets-EXAMPLE:DATABASE_URL::"
         }
       ],
       "logConfiguration": {

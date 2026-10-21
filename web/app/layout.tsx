@@ -32,7 +32,7 @@ const spaceMono = Space_Mono({
 // canonical/OG URLs. The Dockerfile also passes NEXT_PUBLIC_SITE_URL as a build-arg (belt +
 // suspenders); this fallback guarantees prod even if that arg is ever missing.
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://getcumbre.com";
+  process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 const DESCRIPTION =
   "An AI climbing guide for your song: a genre-aware craft grade, your Top 3 fixes, and the route to the summit.";

@@ -3,8 +3,7 @@ import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
 
-// TODO(legal): Manatt, Phelps & Phillips, LLP to finalize. Still needed: registered mailing
-// address for the data-controller block, and a working legal@getcumbre.com inbox for requests.
+// Sample policy copy for the portfolio demo. Not a live service and not legal advice.
 export const metadata: Metadata = {
   title: "Privacy Policy · Cumbre",
   description:
@@ -40,8 +39,8 @@ export default function PrivacyPage() {
         Privacy Policy
       </h1>
       <p style={{ color: "var(--faint)", fontSize: 12 }}>
-        Last updated July 1, 2026. This explains what Professional MAAS LLC (&quot;Cumbre&quot;)
-        collects, why, and your choices. Data controller: Professional MAAS LLC (State of Florida, USA).
+        Last updated July 1, 2026. This explains what the Cumbre demo (&quot;Cumbre&quot;)
+        collects, why, and your choices. This is sample copy. The local demo does not send your audio anywhere.
       </p>
 
       <Section title="Our core promise">
@@ -133,7 +132,7 @@ export default function PrivacyPage() {
       <Section title="Your rights">
         Subject to applicable law, you may request to <b>access</b>, <b>export</b>, <b>correct</b>, or{" "}
         <b>delete</b> your personal data, and object to or restrict certain processing. To make a
-        request, email legal@getcumbre.com from your account email; we will verify and respond
+        request, email demo@example.com from your account email; we will verify and respond
         within the timeframe the law requires. Deleting your account removes your derived metrics and
         report history (records we must keep for legal reasons excepted).
       </Section>
@@ -146,7 +145,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="Contact">
-        Privacy questions or requests: legal@getcumbre.com (Professional MAAS LLC).
+        Privacy questions or requests: demo@example.com (the Cumbre demo).
       </Section>
 
       <LegalFooter />
