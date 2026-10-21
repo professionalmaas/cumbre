@@ -1245,8 +1245,8 @@ module "app" {
   app_env_vars = {
     NEXT_PUBLIC_APP_URL              = "https://${var.host_header}"
     NEXT_PUBLIC_SITE_URL             = "https://${var.host_header}"
-    NEXT_PUBLIC_STRIPE_SUMMIT_URL    = "https://buy.stripe.com/bJe6oG5WL8GI7flbQJawo01"
-    NEXT_PUBLIC_STRIPE_SEASON_URL    = "https://buy.stripe.com/fZufZgad13mo9nt081awo00"
+    NEXT_PUBLIC_STRIPE_SUMMIT_URL    = var.stripe_summit_url
+    NEXT_PUBLIC_STRIPE_SEASON_URL    = var.stripe_season_url
     NEXT_PUBLIC_GOOGLE_ENABLED       = var.google_client_id != "" ? "true" : "false"
     COGNITO_USER_POOL_ID             = aws_cognito_user_pool.cumbre.id
     COGNITO_CLIENT_ID                = aws_cognito_user_pool_client.web.id

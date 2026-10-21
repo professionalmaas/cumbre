@@ -27,9 +27,12 @@ steps/node_modules/
 .next/
 .DS_Store
 
-# Copyrighted demo clips — never commit (replace with cleared/owned clips before launch)
+# Copyrighted demo clips — never commit.
 web/public/samples/dracula.mp3
 web/public/samples/janice.mp3
+# Original demo clips shipped with the public repo (*.wav is ignored above).
+!web/public/samples/ridge.wav
+!web/public/samples/lantern.wav
 
 # numba JIT cache (local worker speedup)
 .numba_cache/

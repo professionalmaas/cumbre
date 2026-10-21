@@ -8,7 +8,15 @@ export function middleware(request: NextRequest) {
     // 'strict-dynamic' trusts scripts loaded by nonce-authenticated scripts (React, dynamic imports).
     // 'https:' is a fallback for older browsers that don't understand strict-dynamic.
     // This removes 'unsafe-inline' from script execution entirely.
-    `script-src 'nonce-${nonce}' 'strict-dynamic' https:`,
+    // Next dev's refresh runtime evaluates strings. Production builds do not, so
+    // unsafe-eval stays off outside development.
+    [
+      `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+      process.env.NODE_ENV === "development" ? "'unsafe-eval'" : "",
+      "https:",
+    ]
+      .filter(Boolean)
+      .join(" "),
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",

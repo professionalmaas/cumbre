@@ -40,7 +40,7 @@ pixel-accurately, then wire the real backends. Design tokens and per-screen spec
   - Body copy (Hanken Grotesk 14.5px, `#a89a82`).
   - "How it works" — 3 numbered steps (Newsreader gradient numerals, title + note), separated by
     1px hairlines `rgba(246,198,74,0.12)`.
-  - **Sample reports** — two cards (Dracula, Janice), each: mini 180° tick-gauge (score 81 / 66),
+  - **Sample reports** — two cards (Ridge Line, Lantern Pocket), each: mini 180° tick-gauge (score 81 / 66),
     band label, artist · genre meta, a one-line takeaway, and a **▶ Preview** pill that plays the
     track audio (pausing the other). Pill: gold text, 1px gold-30% border, pill radius.
   - Privacy chip (summit-triangle icon + "Your audio is never stored…").
@@ -149,8 +149,8 @@ with data fetched from the analysis API (see contract).
 - **Frame:** mobile-first, content max-width 440px, full-height column.
 
 ## Assets
-- `assets/dracula.mp3` — Tame Impala, JENNIE – "Dracula (JENNIE Remix)" (sample report audio).
-- `assets/janice.mp3` — Drake – "Janice STFU" (sample report audio).
+- `assets/*.mp3` — design-handoff reference only. Those recordings are not in the repo.
+  The app ships original clips at `web/public/samples/ridge.wav` and `lantern.wav`.
 - These are the user's uploaded sample tracks. **Confirm licensing/rights before using public
   previews in production**; otherwise swap for cleared/owned demo clips.
 - No raster images or icon fonts: all marks (summit triangle, gauges, ridge, waveform, energy
@@ -228,7 +228,7 @@ analysis/auth backend.
 - `Cumbre.dc.html` — the full prototype (all 6 screens + logic). Open in a browser to interact.
   The markup is between `<x-dc>…</x-dc>`; the logic is the `class Component` script block. Treat
   both as reference for layout, copy, tokens, and behavior.
-- `assets/dracula.mp3`, `assets/janice.mp3` — sample audio (rights TBD).
+- Design-handoff mp3s are not shipped. Public previews are `web/public/samples/ridge.wav` and `lantern.wav`.
 - `analysis-contract.json` — the data shape the Report expects from `/analyze`. Align backend +
   frontend to this.
 - `support.js` — prototype runtime (NOT for production; the component framework that renders the
