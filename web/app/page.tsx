@@ -81,6 +81,10 @@ export default function EntryPage() {
         A pro climbing guide for your music. Drop a track and get a clear, scored route to the summit —
         what&apos;s working, and the exact moves to get higher.
       </p>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.5, color: "var(--muted)", maxWidth: 420, marginTop: 12 }}>
+        Local demo. From a clone, <span style={{ color: "var(--gold)" }}>node scripts/local.mjs</span> installs
+        the web and analyzer dependencies, starts the database, and serves this page.
+      </p>
 
       <div className="eyebrow" style={{ marginTop: 30 }}>
         How it works

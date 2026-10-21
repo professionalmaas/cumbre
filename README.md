@@ -6,26 +6,20 @@ This is a portfolio build. It runs on your machine. It does not call a hosted ac
 
 ## Run it
 
-You need Docker, Node 20+, and Python 3.10+.
+You need Docker Desktop running, Node 20+, and Python 3.10+. This command installs the web packages and the Python analyzer, writes the local env file, starts the database, and opens the app:
 
 ```bash
-cd web
-npm install
-# PowerShell
-Copy-Item ..\.env.dev.example .env.local
-# macOS or Linux
-# cp ../.env.dev.example .env.local
-npm run dev:all
+node scripts/local.mjs
 ```
 
-Open http://localhost:3000 and choose **Continue as dev user**.
+Then open http://localhost:3000 and choose **Continue as dev user**.
 
 1. Play the two demo clips on the home page.
 2. Open a sample report and play the highlight.
 3. Open Plans. Checkout is not connected, so nothing is charged.
 4. Upload `web/public/samples/ridge.wav`, tick the rights box, and watch a real report come back.
 
-Step 4 needs `pip install -r worker/requirements.txt`. Leave `ANTHROPIC_API_KEY` empty. The notes then come from the heuristic in `worker/cumbre_report.py`. The loop is written out in `dev/README.md`.
+Leave `ANTHROPIC_API_KEY` empty. The notes then come from the heuristic in `worker/cumbre_report.py`. The same loop is written out in `dev/README.md`.
 
 `DEV_MODE` is forced off when `NODE_ENV=production` or the process is on ECS. A deploy cannot accidentally skip auth and billing.
 
