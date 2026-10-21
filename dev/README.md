@@ -17,6 +17,10 @@ unchanged — only the plumbing differs, and only while `DEV_MODE=1`.
 
 ---
 
+## One command
+
+From the repo root, `node scripts/local.mjs` installs the web packages and `worker/requirements.txt`, copies `.env.dev.example` to `web/.env.local` when that file is missing, starts Postgres, applies the schema, and runs the app.
+
 ## Prerequisites
 - **Docker** (for Postgres) and **Node 20+** / npm.
 - **Python 3.10+** with the worker deps (`librosa`, `scikit-learn`, …). Used by the inline
