@@ -17,5 +17,5 @@ pronouncing>=0.2.0
 # ── Lyric transcription (OpenAI Whisper) ────────────────────────────────────────
 openai>=1.0
 
-# ── A&R / LLM layer (Claude Haiku 4.5, structured outputs) ──────────────────────
+# ── A&R / LLM layer (the A&R model, structured outputs) ──────────────────────
 anthropic>=0.40

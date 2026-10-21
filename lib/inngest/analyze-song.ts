@@ -1,10 +1,10 @@
 /**
  * Cumbre — automated loop (Inngest durable workflow)  [SKELETON]
  * =============================================================
- * The contract for the order-of-operations and human-gates. Claude Code fills in
+ * The contract for the order-of-operations and human-gates. The implementation fills in
  * the helper calls (Supabase writes, OpenAI moderation, ACRCloud, Modal, Stripe).
  *
- * Load-bearing rules (see CLAUDE.md):
+ * Load-bearing rules (see AGENTS.md):
  *   - moderate + fingerprint run BEFORE charge
  *   - charge is idempotent (key = jobId) and behind a kill switch
  *   - escalate to review_queue ONLY for: copyright, refund/dispute, abuse,
@@ -56,7 +56,7 @@ export const analyzeSong = inngest.createFunction(
   }
 );
 
-/* ---- helpers for Claude Code to implement (see docs/Cumbre_Build_Spec.md) ----
+/* ---- helpers to implement (see docs/Cumbre_Build_Spec.md) ----
    validateUpload(songId, url)   -> { ok, reason }
    moderate(url)                 -> { block, review, ... }      // OpenAI moderation
    acrFingerprint(url)           -> { policy: 'Allow'|'Monetize'|'BlockAccess', ... }

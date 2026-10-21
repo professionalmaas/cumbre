@@ -9,7 +9,7 @@ Three sources are merged:
   a. Engine (in-house)  — ml/cumbre_scoring.analyze_song -> song, scores.music/
      lyrics, subscores, mix, features.
   b. Added MIR (librosa) — structure (8 sections) + highlight (best ~24s window).
-  c. A&R / LLM layer (Claude Haiku 4.5) — the judgement fields the engine can't
+  c. A&R / LLM layer (the A&R model) — the judgement fields the engine can't
      infer: scores.overall/band/verdict, marketFit, readiness, keep, fixes,
      comparables. Falls back to a deterministic heuristic when the key is absent
      or the call fails. Never crashes the worker.
@@ -274,7 +274,7 @@ def _fallback_structure_highlight(duration_sec: float) -> tuple[dict, dict]:
 
 
 # =====================================================================
-# (c) A&R / LLM layer (Claude Haiku 4.5) + heuristic fallback
+# (c) A&R / LLM layer (the A&R model) + heuristic fallback
 # =====================================================================
 def _ar_json_schema() -> dict:
     """Strict JSON schema for ONLY the A&R fields. additionalProperties:false everywhere,

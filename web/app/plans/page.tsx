@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getUser } from "@/lib/auth/session";
 import { authorizeUrl } from "@/lib/auth/cognito";
+import { DEV_MODE } from "@/lib/devMode";
 import { Brand } from "@/components/Brand";
 import { PlansClient } from "@/components/PlansClient";
 import { PlansFaq } from "@/components/PlansFaq";
@@ -173,7 +174,7 @@ export default async function PlansPage({ searchParams }: { searchParams: { plan
               </ul>
               {/* Sign-in first (entitlement is account-bound); state carries the plan so the
                   callback lands back on /plans with this card pre-selected for checkout. */}
-              <a href={authorizeUrl(`plan:${p.id}`)} className="btn-primary" style={{ marginTop: 16 }}>
+              <a href={DEV_MODE ? "/login" : authorizeUrl(`plan:${p.id}`)} className="btn-primary" style={{ marginTop: 16 }}>
                 {p.cta}
               </a>
             </div>

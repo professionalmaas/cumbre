@@ -35,6 +35,6 @@ create table if not exists magic_link_challenges (
 create index if not exists magic_link_challenges_token_hash_idx on magic_link_challenges (token_hash);
 
 -- Abuse guard for the now-free-to-run analysis pipeline (each run still costs real money in
--- worker compute + OpenAI/ACRCloud/Claude calls regardless of payment). The app enforces a
+-- worker compute + OpenAI/ACRCloud/A&R calls regardless of payment). The app enforces a
 -- daily-per-user cap with a COUNT query against jobs(user_id, created_at) — already indexed
 -- by jobs_user_idx (001_schema.sql), no new index needed here.

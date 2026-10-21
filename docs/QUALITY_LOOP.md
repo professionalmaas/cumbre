@@ -44,7 +44,7 @@ qualities) that the A&R layer is scored against on every release. Produces a sin
 number ("A&R quality") so a prompt or model change can't silently get worse.
 
 **Plug points:**
-- The A&R layer lives in `worker/cumbre_report.py` (the Claude Haiku call that produces verdict,
+- The A&R layer lives in `worker/cumbre_report.py` (the call that produces verdict,
   market-fit, readiness, comparables, keep, and fixes-with-impact). Eval calls that same code path
   with golden inputs.
 - Build an `eval/` folder with the golden inputs (derived metrics only — never audio) and an

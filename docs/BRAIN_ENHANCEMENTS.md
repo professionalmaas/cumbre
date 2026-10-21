@@ -1,13 +1,13 @@
 # Brain Enhancements — making the next Cumbre a point-and-shoot build
 
-> Strategy doc. Recommends concrete additions to Christopher's Claude/Cursor "brain"
+> Strategy doc. Recommends concrete additions to Christopher's own Cursor "brain"
 > ecosystem (certus-brain skills, agents/subagents, hooks, plugins, memories) so that
 > building a **consumer SaaS app like Cumbre** becomes reproducible, efficient, cost-mindful,
 > lower-error, and hardened.
 >
 > Reference build throughout: **Cumbre** (AI song-coach — Next.js on ECS Fargate + dedicated
 > Cognito pool + RDS Postgres + S3 + Step Functions + a Fargate worker wrapping a Python ML
-> engine + a Claude Haiku A&R layer + pay-first Stripe). See `docs/AWS_ARCHITECTURE.md`,
+> engine + an A&R layer + pay-first Stripe). See `docs/AWS_ARCHITECTURE.md`,
 > `docs/AWS_RUNBOOK.md`, `docs/DEPLOY.md`, `docs/Cumbre_Build_Spec.md`.
 >
 > This is research + recommendations only — no code/Terraform changes proposed here are applied.
@@ -38,7 +38,7 @@ Cumbre build itself.
 |---|---|---|
 | `prod-launch-auditor` | read-only | PRR before first deploy; READY / ordered BLOCKERS / verdict. Pairs with `/go-live`. |
 | `aws-platform-hardener` | Terraform | Applies A/B/C hardening + deploy-safety set to ECS/ALB/Cognito stacks. |
-| `claude-design-to-prod` | code+TF | Turns a designed app into a deployable service on the shared platform (container, module call, root CI, LAUNCH.md). Does **not** apply/push. |
+| `design-to-prod` | code+TF | Turns a designed app into a deployable service on the shared platform (container, module call, root CI, LAUNCH.md). Does **not** apply/push. |
 
 ### Global skills (`~/.claude/commands/`)
 `/aws-prod-scaffold`, `/add-monitoring`, `/snowflake-route`, `/deploy-ready`, `/cognito-user`,
@@ -48,10 +48,10 @@ Cumbre build itself.
 ### certus-brain skill library (`certus-home\brain\plugins\certus-brain\skills\`)
 ~55 SKILL.md standards, brain-router for first-load. Strong in: medallion-architecture, dbt-*
 (model/testing/macros/replication), snowflake-* (sql/cost/rbac/git-deploy), ml-model-build-standards,
-pipeline-factory-orchestration, efficient-claude-runtime, lean-platform-efficiency,
+pipeline-factory-orchestration, the runtime skill, lean-platform-efficiency,
 git-deploy-guardrails (O-15), targeted-llm-text-analytics, app-backend-mysql-snowflake-pipeline,
-marketing-frontend-* (Claude Design → backend handoff), naming-conventions, observability-and-runbooks.
-**Gap:** no consumer-SaaS app factory; no "analysis contract → UI" standard; no "Claude LLM layer in
+marketing-frontend-* (design handoff to the backend), naming-conventions, observability-and-runbooks.
+**Gap:** no consumer-SaaS app factory; no "analysis contract → UI" standard; no "LLM judgement layer in
 an app worker" standard; the app/AWS factory lives in **global commands + agents**, not in the
 brain library (so it's not discoverable via brain-router or progressive disclosure).
 
@@ -59,7 +59,7 @@ brain library (so it's not discoverable via brain-router or progressive disclosu
 `pre-commit` (junk-file guard: blocks `.claude/`, write-probe files, direct main/master commits),
 `pre-push` (deploy-target allowlist, main/master + force-push block), `secret-scan.sh` (warn-only,
 wired into pre-commit), certus-development other-team write-lock. **All are git-stage hooks.** There
-are **no Claude Code lifecycle hooks** (`settings.json` `hooks`) — no PreToolUse/PostToolUse/Stop
+are **no agent lifecycle hooks** (`settings.json` `hooks`) — no PreToolUse/PostToolUse/Stop
 gates. `~/.claude/settings.json` is near-empty (theme + one bash allow). **Cumbre itself has no
 `.githooks/`** — it's standalone and inherits none of the guardrails.
 
@@ -83,7 +83,7 @@ body and bundled templates load just-in-time, so they cost ~0 tokens until trigg
 |---|---|---|---|---|
 | **`consumer-saas-app-factory`** | "build a consumer app / pay-first SaaS / app with signup + async job + Stripe" | The whole Cumbre shape end-to-end: design-handoff → contract → Next.js (App Router) + **dedicated** Cognito pool (self-signup, Lite tier) + RDS + S3 presigned + Step Functions durable loop + Fargate worker (`waitForTaskToken`) + pay-first Stripe credit ledger → deploy. Encodes the **decision records** that caused the Cumbre redo (dedicated vs shared Cognito; in-app authz on `sub` vs RLS; SFN vs Inngest). Routes to the existing agents. | **L** | Highest — kills the re-platform redo; one trigger reproduces a proven architecture. |
 | **`analysis-contract-to-ui`** | "build the UI from the analysis/result contract" / "contract-first results page" | The contract-first pattern Cumbre used (`docs/analysis-contract.json` → typed report renderer). Standardizes: a single JSON contract is the source of truth for worker output **and** the UI; field names/enums/nesting match exactly (camelCase); a `sample` fixture renders the page with zero backend. Prevents the "column doesn't exist → silent sample fallback" class of bug (`feedback-approach`). | **M** | Eliminates frontend/worker drift; makes the results screen testable before any deploy. |
-| **`claude-llm-layer`** | "add a Claude/LLM judgement layer to a worker/route" / "structured output with fallback" | The exact pattern in `worker/cumbre_report.py`: a **structured-output** LLM call (`claude-haiku-4-5`) for judgement fields the deterministic engine can't infer, with a **deterministic heuristic fallback** when the key is absent or the call fails — *never crashes the worker*. Standardizes: model tiering (Haiku for high-volume judgement, escalate only on low confidence), JSON-schema/tool-use output, prompt-caching the static system+rubric prefix, a golden-set eval before trusting it, and the positioning guardrail (no user-facing "hit probability"). Cross-links `targeted-llm-text-analytics`. | **M** | Reusable money-and-quality-critical pattern; bakes in cost control (Haiku + caching) and resilience (fallback). |
+| **`ar-llm-layer`** | "add an LLM judgement layer to a worker/route" / "structured output with fallback" | The exact pattern in `worker/cumbre_report.py`: a **structured-output** LLM call (`claude-haiku-4-5`) for judgement fields the deterministic engine can't infer, with a **deterministic heuristic fallback** when the key is absent or the call fails — *never crashes the worker*. Standardizes: model tiering (Haiku for high-volume judgement, escalate only on low confidence), JSON-schema/tool-use output, prompt-caching the static system+rubric prefix, a golden-set eval before trusting it, and the positioning guardrail (no user-facing "hit probability"). Cross-links `targeted-llm-text-analytics`. | **M** | Reusable money-and-quality-critical pattern; bakes in cost control (Haiku + caching) and resilience (fallback). |
 | **`pay-first-stripe-credits`** | "pay before the work / Stripe credit ledger / idempotent charge" | Cumbre's money-safety contract: entitlement = active sub OR credit≥1; charge is **idempotent** (Stripe idempotency key = jobId; unique index on `credit_ledger(job_id)`); charge happens **only after** moderation+fingerprint+success; behind a kill switch; webhook signature verified + event-id dedupe. | **M** | Money-safety is the highest-blast-radius area; one standard removes a whole bug class. |
 | **`durable-job-with-human-gate`** | "async job / Step Functions loop / human review queue / task token" | The SFN-Standard + Lambda steps + Fargate `waitForTaskToken` + `review_queue` escalation pattern (copyright/abuse/low-confidence/OOD/drift). Standardizes ASL↔Terraform `templatefile` var alignment (a thing Cumbre had to verify by hand) and the terminal-vs-resumable review states. | **M** | Reproduces the hardest-to-get-right part of Cumbre; the ASL/TF alignment check alone prevents a deploy failure. |
 
@@ -103,8 +103,8 @@ whose intermediate file-reads you don't want to keep.
 
 | Agent | Writes? | Role & when | Effort | Payoff |
 |---|---|---|---|---|
-| **`consumer-saas-design-to-prod`** (variant of `claude-design-to-prod`) | code+TF | Same job as the existing agent but knows the **consumer** profile cold: dedicated self-signup Cognito (not the admin/TOTP/PLUS shared pool), in-app authz on Cognito `sub`, RDS, S3 presigned, SFN+worker, pay-first Stripe. Prevents re-deriving the Cumbre decision records each time. | **M** | The Cumbre re-platform encoded once; next consumer app skips it. |
-| **`worker-ml-ar-builder`** | code | Builds the Fargate worker that wraps an owned ML engine + an LLM A&R layer: `aws_entry.py` (`waitForTaskToken` read/`SendTaskSuccess`), engine reuse (no rewrite — Cumbre rule #6), the `claude-llm-layer` structured-output+fallback, S3 model-artifact load, Dockerfile. | **M** | The worker is the novel, error-prone surface; this makes it a template. |
+| **`consumer-saas-design-to-prod`** (variant of `design-to-prod`) | code+TF | Same job as the existing agent but knows the **consumer** profile cold: dedicated self-signup Cognito (not the admin/TOTP/PLUS shared pool), in-app authz on Cognito `sub`, RDS, S3 presigned, SFN+worker, pay-first Stripe. Prevents re-deriving the Cumbre decision records each time. | **M** | The Cumbre re-platform encoded once; next consumer app skips it. |
+| **`worker-ml-ar-builder`** | code | Builds the Fargate worker that wraps an owned ML engine + an LLM A&R layer: `aws_entry.py` (`waitForTaskToken` read/`SendTaskSuccess`), engine reuse (no rewrite — Cumbre rule #6), the `ar-llm-layer` structured-output+fallback, S3 model-artifact load, Dockerfile. | **M** | The worker is the novel, error-prone surface; this makes it a template. |
 | **`web-resilience-hardener`** | code | App-layer counterpart to the infra `aws-platform-hardener`: verifies presigned-URL flows, idempotent webhook handlers, kill-switch wiring, in-process TTL caches on every external-data route (`feedback-approach`), graceful SIGTERM, `output:'standalone'`. Read-then-edit. | **M** | Catches the app-code blockers the infra hardener can't see. |
 | **`cost-auditor`** (read-only) | no | Static pass before deploy: flags Fargate sizing/always-on tasks vs scale-to-zero, missing AWS Budget hard-stop, NAT vs VPC-endpoint egress, RDS single-AZ always-on, **and LLM cost** (model tier, missing prompt-cache on a static prefix, un-batched calls). Complements `/aws-cost-check` (which reads the live bill) by auditing the *design* pre-spend. | **S** | Cost-mindfulness moved left, before money is spent. |
 
@@ -120,10 +120,10 @@ worktree (`isolation: worktree`) for a writer agent when you want its edits isol
 
 ## 4. HOOKS
 
-Two layers: **git-stage hooks** (already strong — extend) and **Claude Code lifecycle hooks**
+Two layers: **git-stage hooks** (already strong — extend) and **agent lifecycle hooks**
 (`settings.json` `hooks` — currently absent, biggest opportunity). Lifecycle hooks are deterministic
 gates the harness runs; exit code `2` on a `PreToolUse` hook **blocks** the tool call and feeds
-stderr back to Claude (Anthropic hooks reference).
+stderr back to the model (Anthropic hooks reference).
 
 | Hook | Type / event | What it does | Effort | Payoff |
 |---|---|---|---|---|
@@ -181,7 +181,7 @@ DNS) are **isolated to one stage** so the rest is automatable.
    human: none
 
 3. WORKER + LLM LAYER + DURABLE LOOP
-   → agent: worker-ml-ar-builder  + skill: claude-llm-layer, durable-job-with-human-gate
+   → agent: worker-ml-ar-builder  + skill: ar-llm-layer, durable-job-with-human-gate
    → reuse owned ml/ engine (never rewrite); ASL↔TF templatefile var check
    human: none
 
@@ -214,12 +214,12 @@ pricing, and context-engineering docs):
 
 | Lever | Where it applies | Mechanism |
 |---|---|---|
-| **Prompt caching** | `claude-llm-layer` A&R calls; long-running build sessions | Mark the **static prefix** (system prompt + rubric + contract schema + few-shot) with `cache_control:{type:"ephemeral"}`; only the per-song features change. Cache read ≈ 0.1× input. Per-song judgement on Cumbre is the textbook case — same rubric every call. |
+| **Prompt caching** | `ar-llm-layer` A&R calls; long-running build sessions | Mark the **static prefix** (system prompt + rubric + contract schema + few-shot) with `cache_control:{type:"ephemeral"}`; only the per-song features change. Cache read ≈ 0.1× input. Per-song judgement on Cumbre is the textbook case — same rubric every call. |
 | **Model tiering** | LLM layer = **Haiku 4.5** ($1/$5 MTok) for per-song judgement; **Opus** only for architecture/planning; agents already set `model: sonnet` | Default high-volume judgement to Haiku; escalate to a bigger model **only** on low confidence (Cumbre routes sub-0.70 to review anyway). |
 | **Batch API (50% off)** | Offline fame-blind training, bulk re-scoring, eval golden-sets | Non-time-sensitive bulk → Batch API; stacks with caching. |
 | **Background / async agents** | the parallel verify gate (step 4); scheduled `/aws-cost-check` | Run auditors in background subagents; schedule the cost check (mcp scheduled-tasks / `/loop`) instead of ad-hoc. |
-| **Progressive disclosure** | the whole skill library | Author the new skills as metadata-light SKILL.md with bundled templates loaded on demand — they cost ~0 tokens until triggered. Move long reference out of CLAUDE.md into skills. |
-| **Sub-agent context isolation** | search/audit fan-out | Read-heavy work (auditing TF, searching the repo) runs in a subagent's own window and returns a summary — keeps the orchestrator window lean (`efficient-claude-runtime` already says this). |
+| **Progressive disclosure** | the whole skill library | Author the new skills as metadata-light SKILL.md with bundled templates loaded on demand — they cost ~0 tokens until triggered. Move long reference out of AGENTS.md into skills. |
+| **Sub-agent context isolation** | search/audit fan-out | Read-heavy work (auditing TF, searching the repo) runs in a subagent's own window and returns a summary — keeps the orchestrator window lean (`the runtime skill` already says this). |
 | **Compaction + note-taking** | long multi-hour builds (Cumbre was a full day) | Write decision records to `consumer-saas-conventions` memory **before** `/compact` (the PreCompact hook in §4) so the "why" survives. |
 
 ---
@@ -274,7 +274,7 @@ A short, enforceable definition-of-done. Most controls already exist as agents/s
 3. **Write the `consumer-saas-conventions` memory** (S) — capture the Cumbre decision records
    (dedicated Cognito, in-app authz on `sub`, pay-first entitlement, idempotent charge, contract-first,
    Haiku+fallback) so the next consumer app reads them instead of re-deriving them.
-4. **Author `claude-llm-layer` skill** (M) — generalize `worker/cumbre_report.py`'s structured-output
+4. **Author `ar-llm-layer` skill** (M) — generalize `worker/cumbre_report.py`'s structured-output
    + deterministic-fallback + Haiku + prompt-cache pattern; the single most reusable, cost-and-quality
    -critical piece, and it doubles as the cost lever.
 5. **Author `consumer-saas-app-factory` skill + register the global app commands in brain-router** (M)
@@ -285,19 +285,19 @@ A short, enforceable definition-of-done. Most controls already exist as agents/s
 
 ## Sources
 
-Official Anthropic / Claude documentation consulted (2026):
+Official model documentation consulted (2026):
 - Effective context engineering for AI agents — https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
 - Subagents (context isolation, orchestrator-worker) — https://code.claude.com/docs/en/subagents
 - Agent SDK overview (subagents, async, headless) — https://code.claude.com/docs/en/agent-sdk/overview
 - Hooks reference (event names, exit-code/decision gating) — https://code.claude.com/docs/en/hooks
 - Hooks guide (lint/test/secret-scan gating use cases) — https://code.claude.com/docs/en/hooks-guide
-- Extend Claude with skills (SKILL.md, progressive disclosure) — https://code.claude.com/docs/en/skills
-- Memory & CLAUDE.md (hierarchy, imports, auto-memory limits) — https://code.claude.com/docs/en/memory
+- Extend the model with skills (SKILL.md, progressive disclosure) — https://code.claude.com/docs/en/skills
+- Memory & AGENTS.md (hierarchy, imports, auto-memory limits) — https://code.claude.com/docs/en/memory
 - Prompt caching (`cache_control`, ephemeral TTL, cache-read pricing) — https://platform.claude.com/docs/en/build-with-claude/prompt-caching
 - Pricing & models (Haiku/Sonnet/Opus tiers, Batch API 50%) — https://platform.claude.com/docs/en/about-claude/pricing
-- Headless mode (`claude -p`, automation/CI) — https://code.claude.com/docs/en/headless-mode
+- Headless mode (`headless`, automation/CI) — https://code.claude.com/docs/en/headless-mode
 
-Local sources: `cumbre/CLAUDE.md`, `cumbre/docs/AWS_ARCHITECTURE.md`, `worker/cumbre_report.py`,
-`Projects/CLAUDE.md`, `~/.claude/agents/*`, certus-brain skill catalog, and the memory set
+Local sources: `cumbre/AGENTS.md`, `cumbre/docs/AWS_ARCHITECTURE.md`, `worker/cumbre_report.py`,
+`Projects/AGENTS.md`, `~/.claude/agents/*`, certus-brain skill catalog, and the memory set
 (`user-profile`, `feedback-approach`, `cumbre-phase1`, `custom-subagents`, `global-skills-reference`,
 `git-deploy-guardrails-standard`).

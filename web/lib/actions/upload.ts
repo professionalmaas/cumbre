@@ -29,7 +29,7 @@ export interface PreparedUpload {
 
 // Analysis is free to run — payment gates VIEWING the full report (see unlock.ts), not
 // starting one. RATE_LIMIT_PER_DAY bounds worst-case compute/API cost from that free-to-run
-// pipeline (worker Fargate + OpenAI + ACRCloud + Claude all cost real money per run).
+// pipeline (worker Fargate + OpenAI + ACRCloud + A&R all cost real money per run).
 const RATE_LIMIT_PER_DAY = 5;
 
 // Step 1: any signed-in user gets an upload URL, subject to the daily rate limit.
