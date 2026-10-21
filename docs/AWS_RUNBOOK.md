@@ -2,7 +2,8 @@
 
 Prefix: `hub-cumbre-prd`
 Region: `us-east-1`
-Shared platform repo: `professionalmaas/home` branch `PRD`
+
+This runbook describes the production shape. This repository does not include cloud credentials. Running it locally does not create AWS, Stripe, or model-API charges. The shared platform it refers to is not in this repo.
 
 ---
 
@@ -10,7 +11,7 @@ Shared platform repo: `professionalmaas/home` branch `PRD`
 
 Before starting, confirm:
 
-- [ ] Shared platform already applied (`infra/terraform/shared/` in `professionalmaas/home`)
+- [ ] The shared platform (not in this repo) is already applied
 - [ ] AWS CLI configured with an admin-equivalent IAM role
 - [ ] Terraform >= 1.5 installed (`terraform -version`)
 - [ ] Docker installed locally

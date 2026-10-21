@@ -1,25 +1,12 @@
+# Portfolio repo: terraform is an example of the production shape.
+# It does not init, plan, or apply, and it has no cloud credentials.
 name: Terraform
 
 on:
-  push:
-    branches: [PRD]
-    paths:
-      - 'infra/terraform/**'
-      - 'infra/sfn/**'
-      - '.github/workflows/terraform.yml'
-  pull_request:
-    paths:
-      - 'infra/terraform/**'
-      - 'infra/sfn/**'
   workflow_dispatch:
 
 jobs:
-  terraform:
-    uses: professionalmaas/home/.github/workflows/_terraform-layer.yml@PRD
-    with:
-      layer_name: cumbre-prd
-      tf_dir:     infra/terraform
-      aws_region: us-east-1
-      is_push:    ${{ github.event_name == 'push' && github.ref == 'refs/heads/PRD' }}
-    secrets:
-      aws_role_arn: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+  notice:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Terraform is not wired. Identifiers in infra/terraform are examples."

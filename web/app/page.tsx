@@ -46,7 +46,7 @@ const APP_JSONLD = {
   name: "Cumbre",
   applicationCategory: "MultimediaApplication",
   operatingSystem: "Web",
-  url: "https://getcumbre.com",
+  url: "http://localhost:3000",
   description:
     "An AI song coach: upload a track and get a genre-aware, fame-blind craft grade (Music + Lyrics) plus your Top 3 fixes.",
   offers: [
@@ -150,7 +150,7 @@ export default function EntryPage() {
       </div>
 
       <div className="eyebrow" style={{ marginTop: 22 }}>
-        Two real reports
+        Two demo reports
       </div>
       <SampleCards />
 

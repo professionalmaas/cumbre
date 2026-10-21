@@ -39,7 +39,7 @@ variable "monthly_budget_usd" {
 # ── Shared remote state ────────────────────────────────────────────────────────
 variable "shared_state_bucket" {
   type        = string
-  default     = "hub-terraform-state-110844251073"
+  default     = "hub-terraform-state-123456789012"
   description = "S3 bucket holding the shared layer Terraform state"
 }
 
@@ -72,18 +72,18 @@ variable "google_client_secret" {
 variable "use_ses_email" {
   type        = bool
   default     = false
-  description = "Flip true AFTER SES production access is granted: Cognito sends via the verified getcumbre.com SES identity instead of the unreliable COGNITO_DEFAULT sender."
+  description = "Flip true after SES production access is granted. Leave false in this portfolio repo."
 }
 
 variable "ses_identity_arn" {
   type        = string
-  default     = "arn:aws:ses:us-east-1:110844251073:identity/getcumbre.com"
-  description = "SES verified domain identity ARN used when use_ses_email=true."
+  default     = "arn:aws:ses:us-east-1:123456789012:identity/example.com"
+  description = "SES verified domain identity ARN used when use_ses_email=true. Example only."
 }
 
 variable "ses_from_email" {
   type        = string
-  default     = "Cumbre <no-reply@getcumbre.com>"
+  default     = "Cumbre <no-reply@example.com>"
   description = "From address for Cognito emails when use_ses_email=true (must be under the verified SES domain)."
 }
 

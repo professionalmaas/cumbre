@@ -3,10 +3,7 @@ import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
 
-// TODO(legal): Manatt, Phelps & Phillips, LLP to finalize binding ToS before scale.
-// Interim copy uses real entity (Professional MAAS LLC), FL governing law, and a courts
-// dispute clause. Still needed: registered mailing address (for DMCA agent + privacy
-// controller) and a working legal@getcumbre.com inbox.
+// Sample policy copy for the portfolio demo. Not a live service and not legal advice.
 export const metadata: Metadata = {
   title: "Terms of Service · Cumbre",
   description:
@@ -43,7 +40,7 @@ export default function TermsPage() {
       </h1>
       <p style={{ color: "var(--faint)", fontSize: 12 }}>
         Last updated July 1, 2026. These Terms are a binding agreement between you and
-        Professional MAAS LLC (&quot;Cumbre,&quot; &quot;we,&quot; &quot;us&quot;). By creating an account or
+        the Cumbre demo (&quot;Cumbre,&quot; &quot;we,&quot; &quot;us&quot;). By creating an account or
         uploading a track you agree to them.
       </p>
 
@@ -77,7 +74,7 @@ export default function TermsPage() {
         Summit and Season charges are generally <b>non-refundable</b> once an analysis has been
         delivered, because the service is rendered at that point. We do not charge for an analysis
         that fails our moderation/originality checks before delivery. If you believe you were charged
-        in error, contact us at legal@getcumbre.com within 14 days and we will review the request
+        in error, contact us at demo@example.com within 14 days and we will review the request
         in good faith. Chargebacks/disputes may result in immediate suspension of access pending
         review.
       </Section>
@@ -121,20 +118,20 @@ export default function TermsPage() {
 
       <Section title="8. Disclaimers &amp; limitation of liability">
         The service is provided <b>&quot;as is&quot; and &quot;as available,&quot;</b> without
-        warranties of any kind. To the maximum extent permitted by law, Professional MAAS LLC will not be
+        warranties of any kind. To the maximum extent permitted by law, the Cumbre demo will not be
         liable for any indirect, incidental, special, consequential, or punitive damages, or for any
         decisions you make based on the feedback. Our total aggregate liability for any claim is
         limited to the amount you paid us in the 12 months before the claim.
       </Section>
 
       <Section title="9. Governing law">
-        These Terms are governed by the laws of the State of Florida, USA, without regard to its
+        These Terms are sample copy for a demo, not a contract with a live company. They follow the laws of the United States, without regard to its
         conflict-of-laws rules.
       </Section>
 
       <Section title="10. Dispute resolution">
-        Any dispute arising out of or relating to these Terms or the service will be resolved in the
-        state or federal courts located in the State of Florida, USA, and you consent to the personal
+        Any dispute arising out of or relating to these Terms or the service will be resolved in
+        the courts of the United States, and you consent to the personal
         jurisdiction and venue of those courts. We may add a fuller arbitration clause — including a
         class-action waiver and an opt-out window — in a future update; if we do, it will be posted
         here with a new last-updated date.
@@ -143,7 +140,7 @@ export default function TermsPage() {
       <Section title="11. Changes & contact">
         We may update these Terms; material changes will be posted here with a new &quot;last
         updated&quot; date and, where required, notified to you. Questions:{" "}
-        legal@getcumbre.com (Professional MAAS LLC).
+        demo@example.com (the Cumbre demo).
       </Section>
 
       <LegalFooter />

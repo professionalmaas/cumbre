@@ -5,8 +5,7 @@ of the entry and report screens). What's left is **your inputs** — accounts, k
 model. Full mechanics are in `docs/AWS_RUNBOOK.md`; this is the short list.
 
 ## What you provide (one-time)
-1. **AWS** — the shared platform (`professionalmaas/home` → `infra/terraform/shared`) applied, and an
-   S3 Terraform-state bucket. An **ACM cert** covering the Cumbre host on the shared ALB.
+1. **AWS** — your own account, an S3 state bucket, and a certificate on your load balancer. This repo does not ship credentials, and the GitHub workflows do not deploy.
 2. **Stripe** — create two prices and copy their ids:
    - **Summit Pass** — one-time, $9 → `STRIPE_PRICE_SUMMIT`
    - **Season Pass** — recurring, $19/mo → `STRIPE_PRICE_SEASON`

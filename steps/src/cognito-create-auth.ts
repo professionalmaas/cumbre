@@ -20,7 +20,7 @@ interface CreateAuthChallengeEvent {
 const TOKEN_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const ses = new SESv2Client({});
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://getcumbre.com";
-const FROM_ADDRESS = process.env.MAGIC_LINK_FROM_EMAIL || "no-reply@getcumbre.com";
+const FROM_ADDRESS = process.env.MAGIC_LINK_FROM_EMAIL || "no-reply@example.com";
 
 // Generates the magic-link token, persists it (hashed, one-time-use, 10-min expiry), and
 // emails the link directly via SES — Cognito's CustomMessage trigger does NOT fire for

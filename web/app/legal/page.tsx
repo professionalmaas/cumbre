@@ -22,8 +22,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 // Full legal detail reached from the small-print footer. Plain-English summary; the binding
-// ToS/Privacy/DMCA/AUP are the linked subpages. TODO(legal): Manatt, Phelps & Phillips, LLP to
-// finalize; still needed = registered mailing address + working legal@getcumbre.com inbox.
+// Sample policy copy for the portfolio demo. Not a live service and not legal advice.
 export default function LegalPage() {
   return (
     <main className="frame">
@@ -103,7 +102,7 @@ export default function LegalPage() {
 
       <Section title="Copyright &amp; DMCA">
         Cumbre respects intellectual property and enforces a repeat-infringer policy. If you believe
-        content was processed in violation of your rights, contact our DMCA agent at legal@getcumbre.com. We
+        content was processed in violation of your rights, contact our DMCA agent at demo@example.com. We
         run an automated originality (fingerprint) check and route suspected matches to human review
         before any result is delivered.
       </Section>
@@ -115,12 +114,12 @@ export default function LegalPage() {
       </Section>
 
       <Section title="Liability">
-        Cumbre is provided "as is." To the maximum extent permitted by law, Professional MAAS LLC is not liable
+        Cumbre is provided "as is." To the maximum extent permitted by law, the Cumbre demo is not liable
         for decisions you make based on the feedback, or for any indirect or consequential damages.
       </Section>
 
       <p style={{ color: "var(--faint)", fontSize: 11, marginTop: 26 }}>
-        Questions? legal@getcumbre.com. © {new Date().getFullYear()} Cumbre. All rights reserved.
+        Questions? demo@example.com. © {new Date().getFullYear()} Cumbre. All rights reserved.
       </p>
     </main>
   );

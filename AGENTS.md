@@ -95,8 +95,8 @@ This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks li
 Next.js (App Router, ECS Fargate) · Cognito (OAuth + Google) · RDS Postgres · S3 (presigned PUT
 browser uploads) · Step Functions (analysis loop) · Lambda steps + Fargate worker · Stripe
 Checkout + Postgres credit ledger · OpenAI moderation + Whisper · ACRCloud fingerprint · A&R
-copy (lyric feedback). Platform Terraform in `Projects/infra/terraform/` (shared hub); app layer
-in `infra/terraform/` (this repo). Live at `https://getcumbre.com`. AWS account: `110844251073`.
+copy (lyric feedback). The production shape is in `infra/terraform/` and `docs/AWS_ARCHITECTURE.md`.
+The running demo is local. See `dev/README.md`.
 
 ## Architecture rule that drives everything
 The audio job takes seconds-to-minutes. The ML work MUST run in the **Fargate worker**

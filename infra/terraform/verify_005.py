@@ -16,7 +16,7 @@ task = {
     "requiresCompatibilities": ["FARGATE"],
     "cpu": "256",
     "memory": "512",
-    "executionRoleArn": "arn:aws:iam::110844251073:role/hub-cumbre-prd-ecs-execution",
+    "executionRoleArn": "arn:aws:iam::123456789012:role/hub-cumbre-prd-ecs-execution",
     "containerDefinitions": [
         {
             "name": "verify",
@@ -25,7 +25,7 @@ task = {
             "secrets": [
                 {
                     "name": "DATABASE_URL",
-                    "valueFrom": "arn:aws:secretsmanager:us-east-1:110844251073:secret:hub-cumbre-prd/secrets-wQNDw3:DATABASE_URL::",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:hub-cumbre-prd/secrets-EXAMPLE:DATABASE_URL::",
                 }
             ],
             "command": ["sh", "-c", cmd],

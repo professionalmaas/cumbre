@@ -3,9 +3,7 @@ import Link from "next/link";
 import { Brand } from "@/components/Brand";
 import { LegalFooter } from "@/components/LegalFooter";
 
-// TODO(legal): a DMCA designated agent legally needs a physical mailing address AND registration
-// with the US Copyright Office (dmca.copyright.gov). Interim copy uses the email agent contact;
-// add the registered mailing address + complete the Copyright Office registration before scale.
+// Sample policy copy for the portfolio demo. Not a live service and not legal advice.
 export const metadata: Metadata = {
   title: "Copyright / DMCA Policy · Cumbre",
   description:
@@ -41,7 +39,7 @@ export default function DmcaPage() {
         Copyright &amp; DMCA Policy
       </h1>
       <p style={{ color: "var(--faint)", fontSize: 12 }}>
-        Last updated July 1, 2026. Professional MAAS LLC (&quot;Cumbre&quot;) respects
+        Last updated July 1, 2026. the Cumbre demo (&quot;Cumbre&quot;) respects
         intellectual property and responds to valid notices under the Digital Millennium Copyright Act
         (DMCA). Cumbre requires uploaders to warrant they own or control the rights to their audio and
         runs an automated originality (fingerprint) check before any result is delivered.
@@ -50,9 +48,9 @@ export default function DmcaPage() {
       <Section title="Designated agent">
         Send copyright notices to our designated agent:
         <p style={{ marginTop: 8 }}>
-          DMCA Agent — Professional MAAS LLC
+          DMCA Agent — the Cumbre demo
           <br />
-          legal@getcumbre.com
+          demo@example.com
         </p>
       </Section>
 
