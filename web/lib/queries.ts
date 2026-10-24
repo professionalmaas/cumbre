@@ -92,15 +92,25 @@ export async function unlockJobReport(input: {
     if (owns.rows[0].unlocked_full) return { unlocked: true };
 
     if (!input.subscriptionActive) {
-      // Check-then-insert, not a locked read: two concurrent unlocks on two DIFFERENT jobs
-      // by the same user with exactly 1 credit could both pass this check before either
-      // commits (the per-job idempotency guard above only protects the SAME job). Acceptable
-      // at current volume; a materialized balance row with SELECT..FOR UPDATE would close it.
-      const bal = await c.query<{ balance: string }>(
-        `select coalesce(sum(delta), 0)::int as balance from credit_ledger where user_id = $1`,
-        [input.userId]
+      // Jobs created before the charge moved to unlock time carry an analysis-time debit under
+      // reason='analysis'. If that row exists, this job is already paid for and the unlock must
+      // not demand a second credit — otherwise a user whose only credit was spent by the
+      // analysis could never open the report they paid for.
+      const paid = await c.query(
+        `select 1 from credit_ledger where job_id = $1 and reason = 'analysis' limit 1`,
+        [input.jobId]
       );
-      if (Number(bal.rows[0].balance) < 1) return { unlocked: false };
+      if (!paid.rowCount) {
+        // Check-then-insert, not a locked read: two concurrent unlocks on two DIFFERENT jobs
+        // by the same user with exactly 1 credit could both pass this check before either
+        // commits (the per-job idempotency guard above only protects the SAME job). Acceptable
+        // at current volume; a materialized balance row with SELECT..FOR UPDATE would close it.
+        const bal = await c.query<{ balance: string }>(
+          `select coalesce(sum(delta), 0)::int as balance from credit_ledger where user_id = $1`,
+          [input.userId]
+        );
+        if (Number(bal.rows[0].balance) < 1) return { unlocked: false };
+      }
 
       await c.query(
         `insert into credit_ledger (user_id, delta, reason, job_id)

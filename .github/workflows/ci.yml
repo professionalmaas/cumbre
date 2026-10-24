@@ -19,3 +19,15 @@ jobs:
         working-directory: web
       - run: npm run typecheck
         working-directory: web
+
+  engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: worker/requirements.txt
+      - run: pip install -r worker/requirements.txt
+      - run: python ml/test_cumbre.py

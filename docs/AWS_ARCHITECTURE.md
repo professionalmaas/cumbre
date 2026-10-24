@@ -108,7 +108,7 @@ ASL branches on. They reuse the same query layer as the web app (`lib/db`, `lib/
 Wraps `ml/cumbre_scoring.analyze_song` + loads `CUMBRE_fameblind_model.pkl` from the artifacts
 bucket (`CUMBRE_MODEL_S3`). Entry `worker/aws_entry.py`: reads `{ s3Key, genre, year, TASK_TOKEN }`
 from env, downloads audio from S3, runs the engine + model, calls `SendTaskSuccess`. Same
-`extract_and_score` logic as `worker/modal_app.py` (kept for the non-AWS path).
+`extract_and_score` logic as `archive/pre-aws/worker/modal_app.py` (the retired Modal path).
 
 ## What's deliberately deferred (Phase 2+, same as the Supabase build)
 - Lyrics (Demucs/Whisper) + Hip-hop; real text moderation (no lyrics stored in P1).

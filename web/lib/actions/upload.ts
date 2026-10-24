@@ -44,7 +44,7 @@ export async function prepareUpload(
   if (!contentType) return { ok: false, error: `Unsupported file type .${ext}` };
 
   const ent = await getEntitlement(user.sub, user.email ?? undefined);
-  if (!ent.isAdmin && (await countRecentJobs(user.sub, 24)) >= RATE_LIMIT_PER_DAY) {
+  if (!ent.isAdmin && !DEV_MODE && (await countRecentJobs(user.sub, 24)) >= RATE_LIMIT_PER_DAY) {
     return { ok: false, error: "rate_limited" };
   }
 
@@ -76,7 +76,7 @@ export async function enqueueAnalysis(
     return { ok: false, error: "You must confirm you own the rights to this song." };
 
   const ent = await getEntitlement(user.sub, user.email ?? undefined);
-  if (!ent.isAdmin && (await countRecentJobs(user.sub, 24)) >= RATE_LIMIT_PER_DAY) {
+  if (!ent.isAdmin && !DEV_MODE && (await countRecentJobs(user.sub, 24)) >= RATE_LIMIT_PER_DAY) {
     return { ok: false, error: "rate_limited" };
   }
 

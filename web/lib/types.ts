@@ -1,4 +1,4 @@
-// Shared types mirroring supabase/schema.sql and the engine report contract
+// Shared types mirroring db/001_schema.sql (and later migrations) and the engine report contract
 // (docs/sample_report.json / ml/cumbre_scoring.py analyze_song output).
 
 export type Genre = "pop" | "edm" | "hiphop";
@@ -138,7 +138,7 @@ export interface AudioFeatures {
   [k: string]: unknown;
 }
 
-// What worker/modal_app.py extract_and_score returns to the loop.
+// What the worker (worker/cumbre_report.py via worker/aws_entry.py) returns to the loop.
 export interface WorkerResult {
   ok: boolean;
   reason?: string;
