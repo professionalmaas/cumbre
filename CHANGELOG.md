@@ -13,7 +13,7 @@ Found by driving the local build through a real browser (`cd web && npm run veri
 - **Local rate limit.** The 5-analyses-per-day cap stopped local testing after five uploads. Waived in `DEV_MODE` only (`web/lib/actions/upload.ts`).
 
 ### Added
-- `web/scripts/verify-local-loop.mjs` and `npm run verify:local`: 18 browser checks over the whole loop, with screenshots.
+- `web/scripts/verify-local-loop.mjs` and `npm run verify:local`: 19 browser checks over the whole loop, with screenshots.
 - `docs/walkthrough/`: the verified loop as real screens, plus a self-contained `index.html`.
 - Engine tests (`ml/test_cumbre.py`) run in CI next to the TypeScript typecheck.
 

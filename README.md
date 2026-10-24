@@ -35,7 +35,7 @@ The repo ships no credentials, account IDs or environment files, and never has. 
 cd web && npx playwright install chromium && npm run verify:local
 ```
 
-Eighteen browser checks at phone width: demo previews play, the sample highlight plays, two uploads in a row each flip to a full report without a reload or a paywall, the own-track highlight plays, no credit is debited, uploads are deleted, share and profile render, and the console stays clean. The engine's own suite is `python ml/test_cumbre.py` (38 tests), and CI runs it next to the TypeScript typecheck.
+Nineteen browser checks at phone width: the intro dismisses, demo previews play, the sample highlight plays, two uploads in a row each flip to a full report without a reload or a paywall, the own-track highlight plays, no credit is debited, uploads are deleted, share and profile render, and the console stays clean. The engine's own suite is `python ml/test_cumbre.py` (38 tests), and CI runs it next to the TypeScript typecheck.
 
 ## What you are looking at
 

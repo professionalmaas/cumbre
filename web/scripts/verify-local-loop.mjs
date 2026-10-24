@@ -49,8 +49,14 @@ const shot = (n) => page.screenshot({ path: path.join(OUT, `${n}.png`), fullPage
 
 // Home: both demo previews
 await page.goto(BASE, { waitUntil: "networkidle" });
-const enter = page.getByRole("button", { name: /enter|start|begin|continue/i }).first();
-if (await enter.isVisible().catch(() => false)) { await enter.click(); await page.waitForTimeout(600); }
+// First visit shows a full-screen intro (components/LandingIntro.tsx). It mounts after a
+// client-side sessionStorage check, so wait for it rather than testing visibility once.
+const intro = page.getByRole("dialog", { name: /welcome to cumbre/i });
+if (await intro.waitFor({ state: "visible", timeout: 4000 }).then(() => true).catch(() => false)) {
+  await intro.getByRole("button").first().click();
+  await intro.waitFor({ state: "hidden", timeout: 5000 });
+  check("intro dismissed", true);
+}
 for (const title of ["Ridge Line", "Lantern Pocket"]) {
   await page.getByRole("button", { name: new RegExp(`Play preview of ${title}`, "i") }).click();
   await page.waitForTimeout(1500);
