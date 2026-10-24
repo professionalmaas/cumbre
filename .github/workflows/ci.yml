@@ -19,3 +19,30 @@ jobs:
         working-directory: web
       - run: npm run typecheck
         working-directory: web
+
+  engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: worker/requirements.txt
+      - run: pip install -r worker/requirements.txt
+      - run: python ml/test_cumbre.py
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No live keys, account IDs or env files in the tree
+        run: |
+          set -e
+          if git ls-files | grep -E '(^|/)\.env(\.|$)|\.tfvars$|\.tfstate' | grep -v '\.example$'; then
+            echo "::error::env or tfvars/tfstate file is tracked"; exit 1; fi
+          if git grep -nE 'sk-ant-[A-Za-z0-9_-]{20,}|sk_(live|test)_[A-Za-z0-9]{16,}|whsec_[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY' -- . ':!**/package-lock.json'; then
+            echo "::error::secret-looking token in tree"; exit 1; fi
+          if git grep -nE 'arn:aws:[a-z0-9-]+:[a-z0-9-]*:[0-9]{12}:|[0-9]{12}\.dkr\.ecr' -- . ':!**/package-lock.json' | grep -v 123456789012; then
+            echo "::error::real AWS account ID in tree"; exit 1; fi
+          echo "clean"

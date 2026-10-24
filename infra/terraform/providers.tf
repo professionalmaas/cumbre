@@ -3,7 +3,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Team        = "certus"
+      Team        = "hub"
       App         = "cumbre"
       Environment = var.environment
       ManagedBy   = "terraform"
@@ -18,7 +18,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Team        = "certus"
+      Team        = "hub"
       App         = "cumbre"
       Environment = var.environment
       ManagedBy   = "terraform"

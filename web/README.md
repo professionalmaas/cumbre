@@ -1,25 +1,33 @@
-# web/ — Cumbre Next.js app
+# web/
 
-The Next.js (App Router, TypeScript) app lives here, per
-`docs/Cumbre_Build_Spec.md` and `docs/PHASE1_CHECKLIST.md`.
+The Cumbre product UI: Next.js 14 (App Router), TypeScript, Tailwind. Built as a standalone bundle for the Docker image in `Dockerfile`.
 
-Expected structure once scaffolded:
 ```
-web/
-  package.json
-  app/                    # routes + UI (results page from the design handoff)
-    page.tsx              # upload + genre picker (Pop locked in Phase 1)
-    report/[jobId]/page.tsx
-    api/inngest/route.ts  # serves the Inngest function
-    api/stripe/webhook/route.ts
-  lib/
-    inngest/              # <- analyze-song.ts (already provided at repo root lib/inngest/)
-    supabase/  stripe/
+app/            routes: /, /login, /upload, /report/[jobId], /report/sample, /sample/[id],
+                /share/[token], /plans, /profile, /admin, /legal/*, /api/*
+components/     report view, upload form, teaser gate, sample cards, plans, admin review
+lib/            auth (Cognito, or the DEV_MODE stub), db, entitlement, queries, report contract,
+                server actions, aws/ (S3, Step Functions), dev/ (the inline local runner)
+middleware.ts   nonce-based Content Security Policy
+scripts/        verify-local-loop.mjs — the browser verification (npm run verify:local)
+public/samples  the two original demo clips
 ```
-Contracts already provided in the repo:
-- DB: `../supabase/schema.sql`
-- Loop: `../lib/inngest/analyze-song.ts`
-- Scoring worker: `../worker/modal_app.py`
-- Env: `../.env.example`
 
-Kickoff: open the repo root in Cursor and follow `docs/PHASE1_CHECKLIST.md`.
+## Run
+
+```bash
+npm install
+npm run dev          # http://localhost:3000, needs web/.env.local (see ../dev/README.md)
+npm run typecheck
+npm run verify:local # the whole loop in a real browser, app must be running
+npm run build        # standalone production build
+```
+
+`DEV_MODE=1` in `.env.local` swaps Cognito, S3, Step Functions and Stripe for local stand-ins. It is forced off under `NODE_ENV=production` or on ECS (`lib/devMode.ts`).
+
+## Where things are decided
+
+- Who may upload and view: `lib/entitlement.ts`, `lib/actions/upload.ts`, `lib/actions/unlock.ts`.
+- The report shape: `lib/report.ts`, mirrored by `../docs/analysis-contract.json`.
+- The local loop: `lib/dev/runInline.ts` runs `../worker/run_local.py` in place of the state machine.
+- Database access: `lib/db.ts` and `lib/queries.ts`; migrations live in `../db/`.

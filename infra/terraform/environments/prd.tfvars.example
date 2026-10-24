@@ -18,10 +18,10 @@ environment = "prd"
 # ── Routing ───────────────────────────────────────────────────────────────────
 # CRITICAL: controls ALB listener rule AND Cognito callback/logout URLs.
 # Wrong value = auth broken sitewide (redirect_mismatch on every sign-in).
-host_header = "getcumbre.com"
+host_header = "REQUIRED — your-domain.com"
 
 # ── GitHub ────────────────────────────────────────────────────────────────────
-github_repo        = "professionalmaas/cumbre"
+github_repo        = "REQUIRED — your-org/cumbre"
 github_environment = "prd"
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ shared_state_bucket = "hub-terraform-state-ACCOUNT_ID"
 shared_state_key    = "hub-prd/shared/terraform.tfstate"
 
 # ── Cognito ───────────────────────────────────────────────────────────────────
-cognito_domain_prefix = "getcumbre-prd"
+cognito_domain_prefix = "REQUIRED — globally unique hosted-UI prefix, e.g. your-app-prd"
 
 # ── Route53 (optional) ───────────────────────────────────────────────────────
 route53_zone_id = ""

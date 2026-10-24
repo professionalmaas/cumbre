@@ -10,7 +10,8 @@ the production AWS code paths are 100% untouched when the flag is unset.
 | RDS Postgres (TLS) | Docker `postgres:16` on `localhost:55432` (no TLS) |
 | S3 presigned PUT/GET | local files under `web/.dev-uploads/` (gitignored) |
 | Step Functions + Lambdas + Fargate worker | the Python worker run **inline** via `child_process` |
-| Stripe (pay to unlock) | entitlement **auto-granted** (Stripe test-mode still works if keys set) |
+| Stripe (pay to unlock) | entitlement **auto-granted**: the report opens in full, no teaser, credit or profile step (Stripe test-mode still works if keys set) |
+| 5 analyses per user per day | no limit |
 
 The product behavior, the engine (`ml/`), the report contract, and the results UI are all
 unchanged — only the plumbing differs, and only while `DEV_MODE=1`.
@@ -124,3 +125,20 @@ implementation; otherwise it runs the unchanged AWS code:
 - `lib/entitlement.ts` — DEV_MODE auto-grants access (the real ledger/subscription still counts).
 
 If `DEV_MODE` is unset, none of the above branches run.
+
+## Verify the loop
+
+With the app running, drive the whole loop in a real browser and get one line per check:
+
+```bash
+cd web
+npx playwright install chromium     # once
+npm run verify:local
+```
+
+It plays both demo previews and the sample highlight, uploads both demo clips back to back,
+confirms each flips to a full report with no reload and no paywall, plays the own-track
+highlight, checks that no credit was debited and the uploads were deleted, and opens the share
+and profile pages. Screenshots land in `web/.verify/`. The script is
+`web/scripts/verify-local-loop.mjs`; the screens it produced on 2026-10-24 are in
+[`docs/walkthrough/`](../docs/walkthrough/README.md).

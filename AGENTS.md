@@ -61,7 +61,8 @@ values. Passing it OVERRIDES the real `terraform.tfvars` — corrupting the ALB 
 the Cognito callback/logout URLs, and the shared state references. Last time this happened it
 took down auth sitewide (redirect_mismatch on every sign-in attempt).
 
-`host_header` in `terraform.tfvars` must always be `"getcumbre.com"`. It controls:
+`host_header` in `terraform.tfvars` must always be the real domain of your deployment, never a
+placeholder. It controls:
 1. ALB listener routing (wrong value = 404 on every request)
 2. Cognito callback + logout URLs (wrong value = auth broken for all users)
 
@@ -72,11 +73,12 @@ This is its own git repo (default branch `PRD`; never `main`/`master`). Hooks li
 `.githooks/` and are armed into `.git/hooks/`. Re-arm after a fresh clone:
 `sh .githooks/install-guardrails.sh`.
 - **pre-commit** (instant): repo/branch banner · blocks direct commits to `main`/`master` ·
-  blocks junk/`.claude/` files · advisory secret scan (AWS/Anthropic/Stripe/PEM). Overrides:
-  `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_JUNK=YES`, `STRICT_SECRETS=1` (make scan blocking).
+  blocks junk/`.claude/` files · blocking secret scan (AWS/Anthropic/Stripe/PEM). Overrides:
+  `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_JUNK=YES`, `STRICT_SECRETS=0` (make scan advisory).
 - **pre-push**: blocks pushes to `main`/`master` and force-pushes · **BUILD-GREEN gate** —
   typechecks `web/` + `steps/` (`tsc --noEmit`) · **TF VAR guard** — if `.tf` files changed,
-  verifies `terraform.tfvars host_header="getcumbre.com"` (wrong value = auth broken sitewide).
+  verifies `terraform.tfvars host_header` is set and not a placeholder; export `CUMBRE_HOST_HEADER`
+  to require an exact match (wrong value = auth broken sitewide).
   Overrides: `GIT_ALLOW_MAIN=YES`, `GIT_ALLOW_FORCE=YES`, `SKIP_BUILD_CHECK=1`, `SKIP_TF_CHECK=1`.
 - Safe config set: `push.default=current`, `push.autoSetupRemote=true`, `pull.ff=only`.
 - Pushes use the user's credentials and must be run by the user (the agent cannot push). Copyrighted

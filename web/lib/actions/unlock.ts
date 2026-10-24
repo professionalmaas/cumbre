@@ -3,6 +3,7 @@
 import { getUser } from "@/lib/auth/session";
 import { getEntitlement } from "@/lib/entitlement";
 import { getDisplayName, setDisplayName, unlockJobReport } from "@/lib/queries";
+import { DEV_MODE } from "@/lib/devMode";
 
 export async function completeProfile(displayName: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const user = await getUser();
@@ -30,17 +31,20 @@ export async function unlockFullReport(
     getDisplayName(user.sub),
   ]);
 
-  if (!ent.isAdmin && !ent.subscriptionActive && ent.credits < 1) {
+  // DEV_MODE auto-grants the entitlement (see lib/entitlement.ts and dev/README.md), so the
+  // local loop has no pay or profile gate. Both gates stay exactly as they are in production.
+  const waived = DEV_MODE || ent.isAdmin;
+  if (!waived && !ent.subscriptionActive && ent.credits < 1) {
     return { ok: false, error: "no_credits" };
   }
-  if (!ent.isAdmin && (!displayName || displayName.trim().length < 2)) {
+  if (!waived && (!displayName || displayName.trim().length < 2)) {
     return { ok: false, error: "needs_profile" };
   }
 
   const result = await unlockJobReport({
     jobId,
     userId: user.sub,
-    subscriptionActive: ent.isAdmin || ent.subscriptionActive,
+    subscriptionActive: waived || ent.subscriptionActive,
   });
   if (!result.unlocked) return { ok: false, error: "not_found" };
   return { ok: true };
