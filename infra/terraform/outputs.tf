@@ -17,7 +17,7 @@ output "app_ecr_url" {
 
 # ── Worker ECR ────────────────────────────────────────────────────────────────
 output "worker_ecr_url" {
-  description = "Worker ECR repository URL — push certus-cumbre-prd-worker images here"
+  description = "Worker ECR repository URL — push hub-cumbre-prd-worker images here"
   value       = aws_ecr_repository.worker.repository_url
 }
 
@@ -62,6 +62,6 @@ output "artifacts_bucket" {
 
 # ── Step Functions ────────────────────────────────────────────────────────────
 output "state_machine_arn" {
-  description = "ARN of the certus-cumbre-prd-analyze state machine"
+  description = "ARN of the hub-cumbre-prd-analyze state machine"
   value       = aws_sfn_state_machine.analyze.arn
 }

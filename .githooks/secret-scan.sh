@@ -1,8 +1,8 @@
 #!/bin/sh
 # ============================================================
-#  SECRET SCAN  -  pre-commit (ADVISORY / WARN-ONLY, single-pass)
+#  SECRET SCAN  -  pre-commit (BLOCKING by default, single-pass)
 #  Surfaces likely secrets in staged files in ONE grep pass (fast on
-#  Windows/Git-Bash). Never blocks unless STRICT_SECRETS=1.
+#  Windows/Git-Bash). Blocks the commit unless STRICT_SECRETS=0.
 # ============================================================
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 
@@ -25,9 +25,10 @@ if [ -n "$hits" ]; then
   printf '\n  SECRET SCAN: possible secret(s) staged in:\n'
   printf '%s\n' "$hits" | sed "s#${root}/##; s/^/      /"
   printf '    Secrets belong in env files / Secrets Manager, not git.\n'
-  if [ "$STRICT_SECRETS" = "1" ]; then
-    printf '\n  X STRICT_SECRETS=1 -> blocking commit.\n\n'; exit 1
+  if [ "$STRICT_SECRETS" = "0" ]; then
+    printf '    (STRICT_SECRETS=0 -> advisory only, not blocked)\n\n'
+  else
+    printf '\n  X BLOCKED: commit contains what looks like a secret. Set STRICT_SECRETS=0 to override.\n\n'; exit 1
   fi
-  printf '    (advisory only - not blocked; set STRICT_SECRETS=1 to enforce)\n\n'
 fi
 exit 0

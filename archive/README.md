@@ -29,3 +29,4 @@ kept for the record and are not on any run path:
 | `pre-aws/inngest/analyze-song.ts` | The Inngest loop skeleton. Superseded by `infra/sfn/analyze.asl.json` and `steps/`. |
 | `pre-aws/worker/modal_app.py` | The Modal worker. Superseded by `worker/aws_entry.py` wrapping `worker/cumbre_report.py`. |
 | `pre-aws/SETUP.md` | The zip-bundle bootstrap notes from that era. Superseded by `README.md` and `dev/README.md`. |
+| `pre-aws/.env.example` | The Supabase/Inngest/Modal environment template. Superseded by `web/.env.local.example`, `.env.dev.example` and `worker/.env.example`. |

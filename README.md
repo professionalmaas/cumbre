@@ -25,6 +25,10 @@ Leave `ANTHROPIC_API_KEY` empty and the notes come from the heuristic in `worker
 
 `DEV_MODE` is forced off when `NODE_ENV=production` or the process is on ECS. A deploy cannot accidentally skip auth, billing or the rate limit.
 
+## Bring your own keys
+
+The repo ships no credentials, account IDs or environment files, and never has. Everything comes from env files you create from the `.example` templates, or from Secrets Manager in production. The only optional key is `ANTHROPIC_API_KEY` for the written notes. A pre-commit scan blocks key-shaped strings, and CI fails if an env, tfvars or tfstate file is ever tracked. The Terraform uses a neutral `hub` prefix and placeholder account values. To deploy your own, copy `infra/terraform/terraform.tfvars.example` and fill it in, as [`docs/AWS_RUNBOOK.md`](docs/AWS_RUNBOOK.md) describes.
+
 ## Verify it
 
 ```bash

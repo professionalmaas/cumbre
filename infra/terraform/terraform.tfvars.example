@@ -6,10 +6,10 @@ aws_region  = "us-east-1"
 environment = "prd"
 
 # ── Routing ───────────────────────────────────────────────────────────────────
-host_header = "getcumbre.com"   # CRITICAL: controls ALB routing + Cognito callbacks + S3 CORS — wrong value = auth broken sitewide
+host_header = "your-domain.com"   # CRITICAL: the domain your ALB, Cognito callbacks and S3 CORS are built for — wrong value = auth broken sitewide
 
 # ── GitHub ────────────────────────────────────────────────────────────────────
-github_repo        = "professionalmaas/cumbre"
+github_repo        = "your-org/cumbre"   # the fork GitHub Actions OIDC may deploy from
 github_environment = "prd"
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
@@ -17,11 +17,11 @@ admin_email        = "you@example.com"
 monthly_budget_usd = 200
 
 # ── Shared remote state ────────────────────────────────────────────────────────
-shared_state_bucket = "certus-terraform-state-123456789012"
-shared_state_key    = "shared/prd/terraform.tfstate"
+shared_state_bucket = "hub-terraform-state-ACCOUNT_ID"   # replace ACCOUNT_ID with your 12-digit AWS account ID
+shared_state_key    = "hub-prd/shared/terraform.tfstate"
 
 # ── Cognito ───────────────────────────────────────────────────────────────────
-cognito_domain_prefix = "getcumbre-prd"
+cognito_domain_prefix = "your-app-prd"   # globally unique hosted-UI prefix
 
 # ── Route53 ───────────────────────────────────────────────────────────────────
 route53_zone_id = ""   # set to hosted zone ID to auto-create DNS A record

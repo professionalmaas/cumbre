@@ -17,6 +17,13 @@ Found by driving the local build through a real browser (`cd web && npm run veri
 - `docs/walkthrough/`: the verified loop as real screens, plus a self-contained `index.html`.
 - Engine tests (`ml/test_cumbre.py`) run in CI next to the TypeScript typecheck.
 
+### Security and portability
+- No keys, account IDs or environment files are in the tree or in any branch's history (checked 2026-10-24). CI now has a `secret-scan` job that fails on a tracked `.env`/`.tfvars`/`.tfstate` file, a key-shaped token, or a non-placeholder AWS account ID.
+- The pre-commit secret scan blocks by default (`STRICT_SECRETS=0` to relax).
+- Remaining account-specific names (team tag, shared-state bucket, cluster, Cognito hosted-UI prefix) replaced with the neutral `hub` prefix or placeholders in docs, Terraform tags and the example tfvars, so a fork can be deployed without editing hidden defaults.
+- The pre-push Terraform guard no longer hard-codes one domain. It requires a real `host_header` and accepts an exact-match target via `CUMBRE_HOST_HEADER`.
+
 ### Changed
+- The Supabase-era root `.env.example` moved to `archive/pre-aws/`. The live templates are `web/.env.local.example`, `.env.dev.example` and `worker/.env.example`.
 - Pre-AWS leftovers moved to `archive/pre-aws/` (Supabase schema, Inngest loop, Modal worker, the zip-era `SETUP.md`). The live stack is described in `README.md`, `docs/AWS_ARCHITECTURE.md` and `dev/README.md`.
 - `README.md` rewritten around what the app does, how to run it, and what is verified.
