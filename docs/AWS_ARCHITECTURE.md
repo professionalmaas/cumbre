@@ -26,17 +26,19 @@ verification, optional MFA, Lite tier) in the app Terraform. The shared platform
 hosting, ALB, Secrets Manager, CI/CD, monitoring, and the budget hard-stop. The **admin review
 console** is gated by an email allowlist (`ADMIN_EMAILS`), not by a Cognito group.
 
-## Naming (team=`certus`, app=`cumbre`, env=`prd`) → prefix `certus-cumbre-prd`
+## Naming (team=`hub`, app=`cumbre`, env=`prd`) → prefix `hub-cumbre-prd`
+
+`hub` is a placeholder team name; change `local.prefix` in `infra/terraform/main.tf` and the shared-state variables to your own.
 | Resource | Name |
 |---|---|
-| ECR / ECS service / TG / dashboard (module) | `certus-cumbre-prd` |
-| RDS Postgres instance | `certus-cumbre-prd-db` |
-| S3 upload bucket | `certus-cumbre-prd-uploads-<acct>` |
-| S3 model/artifacts bucket | `certus-cumbre-prd-artifacts-<acct>` |
-| Cognito user pool | `certus-cumbre-prd-users` |
-| Step Functions state machine | `certus-cumbre-prd-analyze` |
-| Worker ECS task definition | `certus-cumbre-prd-worker` |
-| Step Lambdas | `certus-cumbre-prd-<step>` (validate, moderate, fingerprint, charge, deliver, reject, review) |
+| ECR / ECS service / TG / dashboard (module) | `hub-cumbre-prd` |
+| RDS Postgres instance | `hub-cumbre-prd-db` |
+| S3 upload bucket | `hub-cumbre-prd-uploads-<acct>` |
+| S3 model/artifacts bucket | `hub-cumbre-prd-artifacts-<acct>` |
+| Cognito user pool | `hub-cumbre-prd-users` |
+| Step Functions state machine | `hub-cumbre-prd-analyze` |
+| Worker ECS task definition | `hub-cumbre-prd-worker` |
+| Step Lambdas | `hub-cumbre-prd-<step>` (validate, moderate, fingerprint, charge, deliver, reject, review) |
 
 ## Web container env contract
 **Non-secret** (`app_env_vars` in Terraform; module also injects `AWS_REGION`, `ALB_ARN`, `PORT`, `HOSTNAME`):
@@ -46,13 +48,13 @@ COGNITO_USER_POOL_ID=...
 COGNITO_CLIENT_ID=...
 COGNITO_DOMAIN=...                 # hosted-UI domain prefix
 COGNITO_ISSUER=https://cognito-idp.<region>.amazonaws.com/<poolId>
-S3_UPLOAD_BUCKET=certus-cumbre-prd-uploads-<acct>
-ANALYZE_STATE_MACHINE_ARN=arn:aws:states:...:stateMachine:certus-cumbre-prd-analyze
+S3_UPLOAD_BUCKET=hub-cumbre-prd-uploads-<acct>
+ANALYZE_STATE_MACHINE_ARN=arn:aws:states:...:stateMachine:hub-cumbre-prd-analyze
 ADMIN_EMAILS=you@company.com
 KILL_SWITCH_SCORING=off
 LOW_CONFIDENCE_THRESHOLD=0.7
 ```
-**Secrets** (`app_secrets` → Secrets Manager `certus-cumbre-prd/secrets`, injected as env at task start):
+**Secrets** (`app_secrets` → Secrets Manager `hub-cumbre-prd/secrets`, injected as env at task start):
 ```
 DATABASE_URL=postgres://...        # RDS
 COGNITO_CLIENT_SECRET=...
@@ -108,7 +110,7 @@ ASL branches on. They reuse the same query layer as the web app (`lib/db`, `lib/
 Wraps `ml/cumbre_scoring.analyze_song` + loads `CUMBRE_fameblind_model.pkl` from the artifacts
 bucket (`CUMBRE_MODEL_S3`). Entry `worker/aws_entry.py`: reads `{ s3Key, genre, year, TASK_TOKEN }`
 from env, downloads audio from S3, runs the engine + model, calls `SendTaskSuccess`. Same
-`extract_and_score` logic as `worker/modal_app.py` (kept for the non-AWS path).
+`extract_and_score` logic as `archive/pre-aws/worker/modal_app.py` (the retired Modal path).
 
 ## What's deliberately deferred (Phase 2+, same as the Supabase build)
 - Lyrics (Demucs/Whisper) + Hip-hop; real text moderation (no lyrics stored in P1).

@@ -11,7 +11,8 @@
     "dev:db": "docker compose -f ../docker-compose.dev.yml up -d",
     "dev:db:down": "docker compose -f ../docker-compose.dev.yml down",
     "dev:setup": "node ../dev/init-db.mjs",
-    "dev:all": "npm run dev:db && npm run dev:setup && npm run dev"
+    "dev:all": "npm run dev:db && npm run dev:setup && npm run dev",
+    "verify:local": "node scripts/verify-local-loop.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.658.1",
@@ -20,10 +21,10 @@
     "@aws-sdk/s3-request-presigner": "^3.658.1",
     "jose": "^5.9.6",
     "next": "14.2.25",
-    "recharts": "^2.13.0",
     "pg": "^8.13.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "recharts": "^2.13.0",
     "stripe": "^16.12.0"
   },
   "devDependencies": {
@@ -32,6 +33,7 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
+    "playwright": "^1.56.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.3"

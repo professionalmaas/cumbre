@@ -6,7 +6,7 @@ in PRs. Full detail in `docs/Cumbre_Build_Spec.md`.
 
 ## 0. Project setup
 - [ ] Next.js (App Router, TypeScript) on Vercel; repo + CI; `AGENTS.md` at root.
-- [ ] Env scaffolding: `.env.example` with `SUPABASE_*`, `STRIPE_*`, `OPENAI_API_KEY`,
+- [ ] Env scaffolding: `.env.example` (now `archive/pre-aws/.env.example`) with `SUPABASE_*`, `STRIPE_*`, `OPENAI_API_KEY`,
       `ACRCLOUD_*`, `MODAL_*`, `INNGEST_*`. Never commit real secrets.
 
 ## 1. Auth + database (Supabase)

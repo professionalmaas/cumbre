@@ -13,6 +13,8 @@ cumbre_training*.csv
 
 # Local-dev harness (DEV_MODE) — transient audio uploads written to local disk
 web/.dev-uploads/
+# Screenshots from `npm run verify:local`
+web/.verify/
 
 # Terraform secrets — never commit real tfvars
 infra/terraform/terraform.tfvars

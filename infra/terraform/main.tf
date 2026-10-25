@@ -415,7 +415,7 @@ resource "aws_cognito_user_pool_client" "web" {
 # Google federated sign-in (teed up; inactive until var.google_client_id is set).
 # Owner creates an OAuth "Web application" client in Google Cloud Console; the Authorized
 # redirect URI MUST be EXACTLY:
-#   https://getcumbre-prd.auth.us-east-1.amazoncognito.com/oauth2/idpresponse
+#   https://<cognito_domain_prefix>.auth.<region>.amazoncognito.com/oauth2/idpresponse
 resource "aws_cognito_identity_provider" "google" {
   count         = var.google_client_id != "" ? 1 : 0
   user_pool_id  = aws_cognito_user_pool.cumbre.id
@@ -463,7 +463,7 @@ resource "aws_ses_identity_policy" "cognito_send" {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# (b) RDS Postgres — certus-cumbre-prd-db
+# (b) RDS Postgres — hub-cumbre-prd-db
 # ══════════════════════════════════════════════════════════════════════════════
 resource "random_password" "db" {
   length           = 32
@@ -997,7 +997,7 @@ resource "aws_ecs_task_definition" "worker" {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# (d) Step Functions state machine — certus-cumbre-prd-analyze
+# (d) Step Functions state machine — hub-cumbre-prd-analyze
 # ══════════════════════════════════════════════════════════════════════════════
 resource "aws_iam_role" "sfn" {
   name = "${local.prefix}-sfn"

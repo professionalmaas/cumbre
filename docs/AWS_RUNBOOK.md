@@ -27,7 +27,7 @@ Before starting, confirm:
 
 ```bash
 ACCT=$(aws sts get-caller-identity --query Account --output text)
-BUCKET="certus-terraform-state-${ACCT}"
+BUCKET="hub-terraform-state-${ACCT}"
 
 aws s3 mb "s3://${BUCKET}" --region us-east-1
 aws s3api put-bucket-versioning \
@@ -43,7 +43,7 @@ and `terraform.tfvars.example`.
 ## Step 2 — Confirm shared platform state is accessible
 
 ```bash
-aws s3 ls "s3://certus-terraform-state-${ACCT}/shared/prd/terraform.tfstate"
+aws s3 ls "s3://hub-terraform-state-${ACCT}/shared/prd/terraform.tfstate"
 # Must exist. If not, apply the shared layer first.
 ```
 
@@ -95,7 +95,7 @@ ACCT=$(aws sts get-caller-identity --query Account --output text)
 cd infra/terraform
 
 terraform init \
-  -backend-config="bucket=certus-terraform-state-${ACCT}" \
+  -backend-config="bucket=hub-terraform-state-${ACCT}" \
   -backend-config="key=cumbre/prd/terraform.tfstate" \
   -backend-config="region=us-east-1"
 ```
@@ -276,7 +276,7 @@ curl -I https://getcumbre.com/api/health
 
 Also test the auth flow manually:
 1. Navigate to `https://getcumbre.com/login`
-2. Should redirect to Cognito hosted UI (`https://getcumbre-prd.auth.us-east-1.amazoncognito.com/...`)
+2. Should redirect to Cognito hosted UI (`https://<cognito_domain_prefix>.auth.us-east-1.amazoncognito.com/...`)
 3. Sign up with a test email, complete email verification
 4. Should redirect back to `/auth/callback` and set session cookie
 
@@ -304,7 +304,7 @@ To flip it without a deploy, update the task definition and force a new deployme
 ```bash
 # 1. Get current task definition
 TASK_DEF=$(aws ecs describe-services \
-  --cluster certus-prd \
+  --cluster hub-prd \
   --services hub-cumbre-prd \
   --query 'services[0].taskDefinition' \
   --output text)
@@ -316,7 +316,7 @@ TASK_DEF=$(aws ecs describe-services \
 
 # 3. Update the service to the new revision
 aws ecs update-service \
-  --cluster certus-prd \
+  --cluster hub-prd \
   --service hub-cumbre-prd \
   --task-definition hub-cumbre-prd:<NEW_REVISION> \
   --force-new-deployment
@@ -372,7 +372,7 @@ aws ecr put-image \
 
 # Force new deployment
 aws ecs update-service \
-  --cluster certus-prd \
+  --cluster hub-prd \
   --service hub-cumbre-prd \
   --force-new-deployment
 ```
@@ -409,7 +409,7 @@ Step Functions: AWS Console → Step Functions → `hub-cumbre-prd-analyze`
 
 Lambda metrics: `/aws/lambda/hub-cumbre-prd-<step>` log groups
 
-SNS alerts: `certus-prd-alerts` topic (from shared layer) → your admin email
+SNS alerts: `hub-prd-alerts` topic (from shared layer) → your admin email
 
 ---
 
@@ -423,4 +423,4 @@ SNS alerts: `certus-prd-alerts` topic (from shared layer) → your admin email
 | Worker task exits immediately | CloudWatch `/ecs/hub-cumbre-prd-worker` logs; TASK_TOKEN present? |
 | Step Lambda timeout | Check RDS SG rules; Lambda VPC config; DB endpoint reachable? |
 | Charge Lambda charging twice | Verify unique index on `credit_ledger(job_id)` where reason='analysis' |
-| Budget alarm firing | Check AWS Cost Explorer → Group by Tag → Team=certus; scale down or optimize |
+| Budget alarm firing | Check AWS Cost Explorer → Group by Tag → Team=hub; scale down or optimize |

@@ -90,15 +90,13 @@ export async function runAnalysisInline(input: InlineInput): Promise<void> {
 
     await setJob(input.jobId, { stage: "charge", confidence: (s.overall ?? 0) / 100 });
 
-    // Charge: same idempotent debit as steps/src/charge.ts. Season subs (chargeable=false)
-    // aren't debited. KILL_SWITCH_SCORING is honoured here too.
-    if (process.env.KILL_SWITCH_SCORING !== "on" && input.chargeable) {
-      await query(
-        `insert into credit_ledger (user_id, delta, reason, job_id)
-         values ($1, -1, 'analysis', $2)
-         on conflict (job_id) where (reason = 'analysis') do nothing`,
-        [input.userId, input.jobId]
-      );
+    // Charge: mirrors steps/src/charge.ts, which no longer debits anything — payment gates
+    // VIEWING the full report (unlockFullReport), not running the analysis. Debiting here
+    // spent a new user's only free credit before they could unlock. The kill switch still
+    // parks the job for review instead of delivering, as the ChargeChoice branch does.
+    if (process.env.KILL_SWITCH_SCORING === "on") {
+      await setJob(input.jobId, { status: "needs_review", flagged_reason: "kill_switch" });
+      return;
     }
 
     // Deliver: same SQL as steps/src/deliver.ts (results upsert + share token, job done).
@@ -112,7 +110,9 @@ export async function runAnalysisInline(input: InlineInput): Promise<void> {
            share_token = coalesce(results.share_token, excluded.share_token)`,
         [input.jobId, JSON.stringify(report), s.music ?? null, s.lyrics ?? null, s.overall ?? null, shareToken()]
       );
-      await c.query(`update jobs set status = 'done', stage = 'deliver' where id = $1`, [input.jobId]);
+      // DEV_MODE auto-grants the entitlement, so the local report opens in full with no
+      // teaser, credit or profile step. Production unlocks on demand (unlockFullReport).
+      await c.query(`update jobs set status = 'done', stage = 'deliver', unlocked_full = true where id = $1`, [input.jobId]);
     });
 
     // Store features, not audio — delete the local upload (mirrors the deliver Lambda).

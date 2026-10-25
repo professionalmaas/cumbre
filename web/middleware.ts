@@ -19,6 +19,10 @@ export function middleware(request: NextRequest) {
       .join(" "),
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
+    // The report's highlight plays the user's own upload from an in-memory object URL
+    // (lib/audioStore.ts) so audio is never stored server-side; without this the browser
+    // refuses the blob: source and the Play highlight button silently does nothing.
+    "media-src 'self' blob:",
     "font-src 'self'",
     [
       "connect-src 'self'",
