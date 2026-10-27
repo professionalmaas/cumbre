@@ -40,6 +40,44 @@ is deleted (`aws sesv2 delete-dedicated-ip-pool --pool-name cumbre --region us-e
 Before each destroy: `terraform state pull > <date>-<layer>.tfstate.json` (local, never
 committed), and keep the printed plan. Order: app layer first, then the shared network.
 
+### Sunset commands (plans verified read-only on 2026-10-27 — run off-hours, one layer at a time)
+```bash
+# 0. traces (already captured once in Downloads\rapitin-rollback-2026-10-27\; repeat before you run)
+cd C:\Users\ob1_k\Projects\cumbre\infra\terraform
+terraform init -reconfigure -backend-config="bucket=hub-terraform-state-110844251073" -backend-config="key=hub-prd/cumbre/terraform.tfstate"
+terraform state pull > C:\Users\ob1_k\Downloads\rapitin-rollback-2026-10-27\hub-cumbre.before-destroy.tfstate.json
+
+# 1. Cumbre app layer — FULL destroy (verified: 0 to add, 0 to change, 122 to destroy; no KMS key, no RDS, no Route 53 zone in the plan)
+terraform destroy          # review: the only things with data are two EMPTY S3 buckets; backup vault has 0 recovery points
+
+# 2. Shared hub — TARGETED destroy of the network/ALB/WAF/ECS/Cognito/SNS only
+#    (verified: 0 to add, 0 to change, 32 to destroy; KMS keys, the four log buckets, CloudTrail, Config,
+#     GuardDuty, Security Hub, Access Analyzer, password policy, GitHub OIDC provider, budget are NOT in the plan)
+cd C:\Users\ob1_k\Projects\infra\terraform\shared
+terraform init -reconfigure -backend-config="bucket=hub-terraform-state-110844251073" -backend-config="key=hub-prd/shared/terraform.tfstate"
+terraform state pull > C:\Users\ob1_k\Downloads\rapitin-rollback-2026-10-27\hub-shared.before-destroy.tfstate.json
+terraform destroy -var "cognito_domain_prefix=getcumbre-prd" -var "admin_email=<your admin email>" \
+  -target=aws_nat_gateway.main -target=aws_eip.nat \
+  -target=aws_lb.main -target=aws_lb_listener.http -target=aws_lb_listener.https \
+  -target=aws_security_group.alb -target=aws_security_group.vpc_endpoints \
+  -target=aws_wafv2_web_acl.main -target=aws_wafv2_web_acl_association.alb -target=aws_wafv2_web_acl_logging_configuration.main \
+  -target=aws_cloudwatch_log_group.waf -target=aws_cloudwatch_metric_alarm.waf_blocks \
+  -target=aws_ecs_cluster.main -target=aws_ecs_cluster_capacity_providers.main \
+  -target=aws_vpc.main -target=aws_subnet.private -target=aws_subnet.public \
+  -target=aws_route_table.private -target=aws_route_table.public \
+  -target=aws_route_table_association.private -target=aws_route_table_association.public \
+  -target=aws_internet_gateway.main -target=aws_vpc_endpoint.s3 -target=aws_flow_log.main \
+  -target=aws_cognito_user_pool.main -target=aws_cognito_user_pool_domain.main -target=aws_cognito_user.admin \
+  -target=aws_sns_topic.alerts -target=aws_sns_topic_subscription.email
+# The printed plan must say "32 to destroy" and must NOT list aws_kms_key.* or aws_s3_bucket.* — stop if it does.
+
+# 3. Outside Terraform: the $15/mo SES managed dedicated-IP pool in us-east-2 (nothing sends through it)
+aws sesv2 delete-dedicated-ip-pool --pool-name cumbre --region us-east-2
+
+# 4. Verify (next day): Cost Explorer "EC2 - Other" drops by ~half, "Elastic Load Balancing" by ~half,
+#    SES to ~$0; the two RDS snapshots still list `available`; alias/hub-prd-secrets still Enabled.
+```
+
 ## How to bring it back (≈ 1–2 h hands-on; ~$60–90/mo once up)
 1. **Platform:** `cd Projects/infra/terraform/shared && terraform init -backend-config="bucket=hub-terraform-state-110844251073" -backend-config="key=hub-prd/shared/terraform.tfstate" && terraform apply` — the kept resources (KMS, log buckets, security) are reused; the network/ALB/WAF/Cognito come back. Follow `/new-hub` Phase 1 and the playbook gotchas (ACM cert must be ISSUED before the HTTPS listener; ASCII-only SG descriptions; `terraform validate` first).
 2. **App layer:** restore `terraform.tfvars` from `Downloads\cumbre-archive\terraform.tfvars.backup` into `infra/terraform/`; `terraform init -backend-config="bucket=hub-terraform-state-110844251073" -backend-config="key=hub-prd/cumbre/terraform.tfstate" && terraform apply` (`/new-hub` Phase 2). Never `-var-file=environments/*.tfvars` (gotcha 14).
