@@ -93,3 +93,38 @@ aws sesv2 delete-dedicated-ip-pool --pool-name cumbre --region us-east-2
 Nothing in Rapitín depends on the hub: separate VPC, ALB, Cognito pool, WAF, state bucket,
 and its own GitHub OIDC deploy role (verified 2026-10-27: no `hub-prd` / remote-state
 references in `rapitin-os/deploy` or its workflows).
+
+
+## Executed 2026-11-06 (owner: "cumbre we can sunset, but make sure the POS Rapitín and PlainClinician are unaffected")
+- **App layer**: the full teardown of `hub-prd/cumbre/…` ran clean, 122 destroyed, from the plan re-verified that day
+  (state backed up first to `Downloads\rapitin-rollback-2026-10-27\hub-cumbre.before-destroy-2026-11-06.tfstate.json`).
+  Four orphaned Lambda VPC ENIs (`hub-cumbre-prd-worker-lambda`, `-moderate`, `-charge`) held two security groups for
+  20 minutes; they were deleted by hand (`aws ec2 delete-network-interface`) and the teardown finished.
+- **Shared hub**: instead of the targeted teardown above, the network was **removed from the shared config** so the
+  config matches the account and a later `terraform apply` cannot recreate it by accident: `vpc.tf`,
+  `vpc_endpoints.tf`, `alb.tf` (its ALB-logs bucket moved unchanged to `alb_logs.tf`, the OIDC provider to
+  `github_oidc.tf`), `waf.tf`, `ecs_cluster.tf`, `cognito.tf`, the WAF alarm in `monitoring.tf`, the flow log in
+  `security.tf`, the network outputs and the `cognito_domain_prefix` variable. The ALB's deletion protection was
+  switched off with the CLI first. Applied: 31 destroyed, 28 added (CloudTrail streamed to CloudWatch Logs + twelve
+  CIS-style metric alarms, `account_security.tf`), 1 changed (the trail). State backed up to
+  `Downloads\rapitin-rollback-2026-10-27\hub-shared.before-sunset-2026-11-06.tfstate.json`. home repo PR #130.
+- **SES**: the managed dedicated-IP pool `cumbre` in us-east-2 is deleted ($15/mo). The `getcumbre.com` identities stay.
+- **Kept, as promised above**: both KMS keys, the four log buckets, CloudTrail, Config (daily), GuardDuty, Security Hub,
+  Access Analyzer, the password policy, the GitHub OIDC provider, the account budget ($200 as the owner set it), the
+  SNS alerts topic (re-subscribed, confirmed), the Route 53 zone, the RDS snapshots, Stripe. One orphan Cognito pool
+  `hub-cumbre-prd-users` (`us-east-1_XHN3Bevq3`, Essentials tier, 0 users, left by the July teardown) sits outside any
+  state; delete it from the console whenever convenient.
+- **Verified unaffected**: Rapitín (own VPC `vpc-0984cde446a56897d`, NAT, ALB, WAF, Cognito, topic, budget) answered
+  200 before and after each apply; PlainClinician (no VPC) likewise.
+
+### Bringing the shared network back after this
+The removed files are in the home repo's history, one commit before the squash commit of PR #130
+(`git -C C:\Users\ob1_k\Projects log --oneline --grep "hub sunset"` names it; call it `<sunset>`):
+```bash
+cd C:\Users\ob1_k\Projects
+for f in vpc vpc_endpoints waf ecs_cluster cognito; do git show "<sunset>^:infra/terraform/shared/$f.tf" > "infra/terraform/shared/$f.tf"; done
+git show "<sunset>^:infra/terraform/shared/alb.tf" > infra/terraform/shared/alb.tf && git rm -q infra/terraform/shared/alb_logs.tf infra/terraform/shared/github_oidc.tf
+git show "<sunset>^:infra/terraform/shared/outputs.tf" > infra/terraform/shared/outputs.tf   # then re-add output cloudtrail_log_group
+# from the same commit: the waf_blocks alarm back into monitoring.tf, aws_flow_log.main back into security.tf,
+# variable "cognito_domain_prefix" back into variables.tf. Then step 1 of "How to bring it back" above.
+```
